@@ -27,20 +27,20 @@ function setState(bool enable = true)
 
     if(EnableQuest != enable)
         EnableQuest = enable
-        
-        if(EnableQuest)
-            saveGameSettings()
-            zeroGameSettings()
-            start()
-        else
-            revertGameSettings()
-            stop()
-        endif
-        
     endif
     
-
+    if(enable)
+		debug.notification("Starting Gold Is XP...")
+		saveGameSettings()
+		zeroGameSettings()
+		start()
+	else
+		debug.notification("Stopping Gold Is XP...")
+		revertGameSettings()
+		stop()
+	endif
 endFunction
+
 
 function zeroGameSettings()
     int i = 0

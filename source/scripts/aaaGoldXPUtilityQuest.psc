@@ -6,6 +6,7 @@ Message Property SKSENotInstalled auto
 Message Property SkillXPUpdated auto
 {Message when Skill XP is updated}
 
+
 float Property  ReductionMult auto
 float Property  SkillXPCoefficient auto
 float Property  SkillXPConstant auto
@@ -29,7 +30,15 @@ int Property  MaxSkillIncreasesPerLevelDefault auto
 bool Property  ExponentialEnable auto
 bool Property	ExponentialEnableDefault auto
 
+bool Property consumeGold auto
+Message Property ConfirmRaiseSkillMessage  Auto  
+
+
 ;bool Property EnableUtilityQuest auto
+
+; xxx We increment this variable each time a skill point is gained through spending gold. 
+; Once 10 skill points have been gained, gain a level and reset count to 0.
+int skillIncreases = 0
 
 
 Message Property InitializeMessage auto
@@ -71,6 +80,26 @@ float property PI_CONSTANT = 3.1415926535 autoreadonly
 
 GlobalVariable Property aaaGoldXPBuffered auto
 GlobalVariable Property aaaGoldXPSkillXPBuffered auto
+
+; these variables exist purely so that skill values can be included in the "level up" menus
+GlobalVariable Property aaaGoldXPAlchemySkill auto
+GlobalVariable Property aaaGoldXPAlterationSkill auto
+GlobalVariable Property aaaGoldXPArcherySkill auto
+GlobalVariable Property aaaGoldXPBlockSkill auto
+GlobalVariable Property aaaGoldXPConjurationSkill auto
+GlobalVariable Property aaaGoldXPDestructionSkill auto
+GlobalVariable Property aaaGoldXPEnchantSkill auto
+GlobalVariable Property aaaGoldXPHeavyArmorSkill auto
+GlobalVariable Property aaaGoldXPIllusionSkill auto
+GlobalVariable Property aaaGoldXPLightArmorSkill auto
+GlobalVariable Property aaaGoldXPLockpickingSkill auto
+GlobalVariable Property aaaGoldXPOneHandedSkill auto
+GlobalVariable Property aaaGoldXPPickpocketSkill auto
+GlobalVariable Property aaaGoldXPRestorationSkill auto
+GlobalVariable Property aaaGoldXPSmithingSkill auto
+GlobalVariable Property aaaGoldXPSneakSkill auto
+GlobalVariable Property aaaGoldXPSpeechSkill auto
+GlobalVariable Property aaaGoldXPTwoHandedSkill auto
 
 ;Allow indexing of skill names.
 String[] property SkillNames auto
@@ -130,8 +159,6 @@ Function maintenance()
 	
 	/;
 	
-	
-	
 	if(arraysUninitialized)
 		
 		RegisterForSingleUpdate(3)	;new game
@@ -139,10 +166,12 @@ Function maintenance()
 	
 EndFunction
 
+
 Event OnUpdate()
 	deferedInit()
 	InitializeMessage.show()
 EndEvent
+
 
 function deferedInit()
 	if(game.getPlayer().getLevel() == 1.0)
@@ -184,40 +213,6 @@ function copyArrayInt(int[] dest, int[] src)
 endFunction
 
 
-
-
-int function getLowestSkillValue()
-
-	
-
-	int lowest = 100
-	int i = 0
-	
-	while(i < SkillNames.Length)
-		int skillLevel = game.getPlayer().getBaseActorValue(SkillNames[i]) as int
-		if (skillLevel < lowest)
-			lowest = skillLevel
-		endIf
-		
-		i += 1
-	EndWhile
-	
-	return lowest
-
-endFunction
-
-
-;checks whether or not we can add tokens to the provided container
-bool function IsContainerTrackable(ObjectReference destContainer)
-
-	if(destContainer.getItemCount(TrackableToken) > 0)
-		return true
-	else
-		destContainer.addItem(TrackableToken)
-		
-		return destContainer.getItemCount(TrackableToken) > 0
-	endif	
-endfunction
 
 ;Called to set skill xp to 0.  This is runs on all skills to prevent players from dying from OCD when they use a skill book and it looks like they're gaining skill because of how incrementskill works.
 function SetAllVanillaSkillXPToZero()
@@ -265,22 +260,13 @@ EndFunction
 ;Repeatibly displays message menus until player is done leveling skills.
 bool Function LevelSkills()
 	
-	;debug.notification("level skills begin")
-	
 	int currentMenu = 0; 0 - Mage, 1 - Thief, 2 - Warrior
 	;track skills leveled-up this session
 	CheckExternalSkillGains(); see if there were any external skill gains pre-level
 	
-	;debug.notification("check external skill gains")
-	
-	;Int[] SkillIncreasesThisLevel = new int[18]; track the skills that were raised this level.  Only used to prevent power leveling early on.
-	
 	int option = DisplaySkillMenu(currentMenu)
 	
-	
-	;debug.notification("display skill menu")
-	
-	while(option >= 0 && option < 8);didn't exit
+	while(option >= 0 && option < 8)	;didn't exit
 	
 		;switchmenu options
 		if(option == 0)
@@ -293,21 +279,16 @@ bool Function LevelSkills()
 			if (currentMenu > 2)
 				currentMenu = 0
 			endif
-		;Check if the player has increased a skill more than MaxSkillIncreasesPerLevel * num levels.  Multiple levels are handled all at once.
-		elseif(SkillCaps[GetSkillNameIndex(currentMenu, option)] <= 0)
-			
-			SkillXPMenuExceedNumLevel.show()
-			
-		;handle the level up
+		
 		else
-			float cost = CostToLevelSkill(GetSkillNameIndex(currentMenu, option))
-			
-			;debug.notification("Cost to level skill: " + cost)
-			
-			float remainder = aaaGoldXPSkillXPBuffered.GetValue() - cost
+			;handle the level up
+			int cost = CostToLevelSkillbyIndex(GetSkillNameIndex(currentMenu, option))
+			int remainder = Game.GetPlayer().GetGoldAmount() - cost
 			
 			if(remainder < 0)
-				SkillXPMenuExceedCost.show()
+				SkillXPMenuExceedCost.show(cost)
+			elseif (ConfirmRaiseSkillMessage.show(Game.GetPlayer().GetGoldAmount(), cost) > 0)
+				; do nothing - player chose not to spend the gold
 			else
 				
 				int current_skill = game.getPlayer().getBaseActorValue(SkillNames[GetSkillNameIndex(currentMenu, option)]) as int; 
@@ -316,8 +297,18 @@ bool Function LevelSkills()
 				int raised_skill = game.getPlayer().getBaseActorValue(SkillNames[GetSkillNameIndex(currentMenu, option)]) as int; 
 				
 				if(current_skill < raised_skill)
-					SkillCaps[GetSkillNameIndex(currentMenu, option)] = SkillCaps[GetSkillNameIndex(currentMenu, option)] - 1; count times raised.
-					aaaGoldXPSkillXPBuffered.SetValue(remainder) ;remove skillxp used
+					; skill was incremented successfully
+					Game.GetPlayer().RemoveItem(GoldBase, (cost as int))
+					; xxx Count all skill increases, level up when >= 10
+					skillIncreases += 1
+					if (skillIncreases >= 10)
+						skillIncreases = 0
+						GainLevel()
+					else
+						; set XP to correct "proportion" of progress to next level, based on number of skill
+						; points gained so far
+						Game.SetPlayerExperience(Game.GetExperienceForLevel(Game.GetPlayer().GetLevel() ) * skillIncreases / 10.0)
+					endif
 				else
 					SkillXPMenuCapReached.show()
 					
@@ -332,19 +323,17 @@ bool Function LevelSkills()
 		option = DisplaySkillMenu(currentMenu)
 	
 	endWhile
-	
-	
-	
+
 	UpdateLastSkillGains();we just leveled so update LastSkillGains so we catch the next set of external skill increases at next level-up
-	
-	;debug.notification("option: " + option)
 	
 	return option == 9;If we snoozed return true
 EndFunction
 
+
 int function GetSkillNameIndex(int menu, int option)
-	return option - 1 + menu * 6; option - 1 alligns index, currentMenu*6 points to the right block in SkillNames
+	return option - 1 + menu * 6; option - 1 aligns index, currentMenu*6 points to the right block in SkillNames
 endFunction
+
 
 int Function DisplaySkillMenu(int menu)
 
@@ -359,68 +348,33 @@ int Function DisplaySkillMenu(int menu)
 	endwhile
 	
 	if(menu == 0)
-		returnValue = MagicSkillMenu.show(aaaGoldXPSkillXPBuffered.GetValue(), SkillLevels[0], SkillLevels[1], SkillLevels[2], SkillLevels[3], SkillLevels[4], SkillLevels[5])
+		UpdateCurrentInstanceGlobal(aaaGoldXPAlterationSkill)
+		UpdateCurrentInstanceGlobal(aaaGoldXPConjurationSkill)
+		UpdateCurrentInstanceGlobal(aaaGoldXPDestructionSkill)
+		UpdateCurrentInstanceGlobal(aaaGoldXPEnchantSkill)
+		UpdateCurrentInstanceGlobal(aaaGoldXPIllusionSkill)
+		UpdateCurrentInstanceGlobal(aaaGoldXPRestorationSkill)
+		returnValue = MagicSkillMenu.show(Game.GetPlayer().GetGoldAmount(), SkillLevels[0], SkillLevels[1], SkillLevels[2], SkillLevels[3], SkillLevels[4], SkillLevels[5])
 	elseif(menu == 1)
-		returnValue = ThiefSkillMenu.show(aaaGoldXPSkillXPBuffered.GetValue(), SkillLevels[0], SkillLevels[1], SkillLevels[2], SkillLevels[3], SkillLevels[4], SkillLevels[5])
+		UpdateCurrentInstanceGlobal(aaaGoldXPAlchemySkill)
+		UpdateCurrentInstanceGlobal(aaaGoldXPLightArmorSkill)
+		UpdateCurrentInstanceGlobal(aaaGoldXPLockpickingSkill)
+		UpdateCurrentInstanceGlobal(aaaGoldXPPickpocketSkill)
+		UpdateCurrentInstanceGlobal(aaaGoldXPSneakSkill)
+		UpdateCurrentInstanceGlobal(aaaGoldXPSpeechSkill)
+		returnValue = ThiefSkillMenu.show(Game.GetPlayer().GetGoldAmount(), SkillLevels[0], SkillLevels[1], SkillLevels[2], SkillLevels[3], SkillLevels[4], SkillLevels[5])
 	else
-		returnValue = WarriorSkillMenu.show(aaaGoldXPSkillXPBuffered.GetValue(), SkillLevels[0], SkillLevels[1], SkillLevels[2], SkillLevels[3], SkillLevels[4], SkillLevels[5])
+		UpdateCurrentInstanceGlobal(aaaGoldXPArcherySkill)
+		UpdateCurrentInstanceGlobal(aaaGoldXPBlockSkill)
+		UpdateCurrentInstanceGlobal(aaaGoldXPHeavyArmorSkill)
+		UpdateCurrentInstanceGlobal(aaaGoldXPOneHandedSkill)
+		UpdateCurrentInstanceGlobal(aaaGoldXPSmithingSkill)
+		UpdateCurrentInstanceGlobal(aaaGoldXPTwoHandedSkill)
+		returnValue = WarriorSkillMenu.show(Game.GetPlayer().GetGoldAmount(), SkillLevels[0], SkillLevels[1], SkillLevels[2], SkillLevels[3], SkillLevels[4], SkillLevels[5])
 	endif
 	
 	return returnValue
 EndFunction
-
-;TODO factor in modifiers on skill leveling speed
-Float Function CostToLevelSkill(int i)
-	float skillLevel = Game.GetPlayer().GetBaseActorValue(SkillNames[i])
-	;linear cost function, where cost is adjusted down the number of external skill levels gained.  This makes it so there is no long term benefit for hoarding your books and leveling quests
-	return SkillXPConstant + SkillXPCoefficient * (skillLevel - ExternalSkillGains[i])
-EndFunction
-
-Function GainGoldXP(int goldValue)
-	
-	
-		
-	aaaGoldXPBuffered.SetValue(aaaGoldXPBuffered.GetValue() + getXP(goldValue))
-	
-EndFunction
-
-
-
-Function RemoveGoldXP(int goldValue)
-	float remainder = aaaGoldXPBuffered.GetValue() - goldValue
-	
-	if (remainder < 0)
-		remainder = 0
-	endif
-	aaaGoldXPBuffered.SetValue(remainder)
-
-endFunction
-
-float function getXP(int goldValue)
-	;Simpler function
-	
-	if(ReductionMult > 0)
-	
-		int currentLevel = game.getPlayer().getLevel()
-	
-		float maxGain = ReductionMult * GoldXPToLevel(currentLevel)
-		
-		;debug.notification("max gain: " + maxgain)
-		;debug.notification("gold value: " + goldvalue)
-		
-		float xp = (maxGain / 90) * Math.atan(goldValue * (PI_CONSTANT / 2) / (maxGain))
-		
-		;Debug.notification("xp gained : " + xp)
-		
-		return xp
-		
-	else
-		return goldValue
-	endif
-	
-	;debug.notification("Gold XP to gain: " + goldXP)
-
-endfunction
 
 
 ;Adds all buffered xp to player, can cause level-ups, clears buffer and handles next level calculations
@@ -440,7 +394,7 @@ int function GainBufferedXP()
 		;subtract xp from buffer
 		aaaGoldXPBuffered.SetValue(aaaGoldXPBuffered.GetValue() - GoldXPToLevel(playerLevel))
 		;add skillXP
-		aaaGoldXPSkillXPBuffered.SetValue(aaaGoldXPSkillXPBuffered.GetValue() + SkillXPOnLevel(playerLevel))
+		;aaaGoldXPSkillXPBuffered.SetValue(aaaGoldXPSkillXPBuffered.GetValue() + SkillXPOnLevel(playerLevel))
 		
 		;cause vanilla level-up
 		bufferedGameXP += Game.GetExperienceForLevel(playerLevel)
@@ -450,12 +404,7 @@ int function GainBufferedXP()
 		numLevels += 1
 		
 	EndWhile
-	
-	
-	if(numLevels >= 0)
-		updateSkillCaps(numLevels)
-	endif
-	
+		
 	;Set Vanilla Level bar to represent player progress
 	Float progressDecimal = aaaGoldXPBuffered.GetValue() / GoldXPToLevel(playerLevel)
 	Game.SetPlayerExperience(bufferedGameXP + Game.GetExperienceForLevel(playerLevel) * progressDecimal) ;game can't handle XP gain during events so we add it all at the end and don't rely on the level increasing during the event
@@ -464,33 +413,80 @@ int function GainBufferedXP()
 	return numLevels
 EndFunction
 
-function updateSkillCaps(int numLevels)
 
-	int count = 0
-	
-	while(count < SkillCaps.length)
-		SkilLCaps[count] = SkillCaps[count] + numLevels * MaxSkillIncreasesPerLevel
-		count += 1
-		
-	endWhile
+Function GainLevel()
+	Game.SetPlayerExperience(Game.GetExperienceForLevel(Game.GetPlayer().GetLevel()))
+	debug.notification("Leveled up!")
+EndFunction
 
-endFunction
+
 
 ;Returns the amount of GoldXP to level
-Float Function GoldXPToLevel(int currentLevel)
-	;constant + coefficient*base^currentLevel
-	
-	if(ExponentialEnable)
-		return (ExponentialConstant + ExponentialCoefficient * Math.Pow(ExponentialBase, currentLevel))
+int Function GoldXPToLevel (int currentLevel)
+	; same formula as Dark Souls, but starting at level 12 (formula not accurate below at)
+	return (0.02*Math.Pow(currentLevel+11, 3) + 3.06*Math.Pow(currentLevel+11, 2) + 105.6*(currentLevel+11) - 895) as int
+EndFunction
+
+
+int Function GoldXPToLevelSkill (int skillLevel)
+	; currentSkill = current level of the skill (0-100)
+	if (skillLevel >= 5)
+		return GoldXPToLevel(skillLevel - 4) / 10
 	else
-		return ExponentialConstant + ExponentialCoefficient * currentLevel
+		return GoldXPToLevel(1) / 10
 	endif
 EndFunction
 
-;Returns the ammount of SkillXP gained on level-ups
-Float Function SkillXPOnLevel(int Level)
-	return SkillXPGainConstant + SkillXPGainCoefficient * level
+
+; Every 10 skill increases = 1 level-up, therefore the cost of levelling a skill is 1/10 of a level up.
+; skills generally start at 5, so we convert this to 1
+int Function CostToLevelSkillbyIndex(int skillIndex)
+	int skillLevel = Game.GetPlayer().GetBaseActorValue(SkillNames[skillIndex]) as int
+	return GoldXPToLevelSkill(skillLevel)
 EndFunction
+
+
+int function getLowestSkillValue()
+
+	int lowest = 10000
+	int i = 0
+	
+	while(i < SkillNames.Length)
+		int skillLevel = Game.GetPlayer().GetBaseActorValue(SkillNames[i]) as int
+		if (skillLevel < lowest)
+			lowest = skillLevel
+		endIf
+		
+		i += 1
+	EndWhile
+	
+	return lowest
+
+endFunction
+
+
+int function getHighestSkillValue()
+
+	
+
+	int highest = 0
+	int i = 0
+	
+	while(i < SkillNames.Length)
+		int skillLevel = Game.GetPlayer().GetBaseActorValue(SkillNames[i]) as int
+		if (skillLevel > highest)
+			highest = skillLevel
+		endIf
+		
+		i += 1
+	EndWhile
+	
+	return highest
+
+endFunction
+
+
+
 
 function fillIntArray(int[] intArray, int value)
 	int i = 0
@@ -501,3 +497,4 @@ function fillIntArray(int[] intArray, int value)
 		i += 1
 	endWhile
 endFunction
+

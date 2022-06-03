@@ -9,6 +9,7 @@ GlobalVariable Property aaaGoldXPBuffered auto
 GlobalVariable Property aaaGoldXPSkillXPBuffered auto
 GlobalVariable Property aaaGoldXPVersion auto
 
+
 ;Text Properties
 String Property SliderLabelBase auto
 String Property SliderLabelCoefficient auto
@@ -103,6 +104,11 @@ String Property ValueSkillXPGainCoefficient 	= "SkillXPGainCoefficient" autoread
 String Property ValueSkillXPGainConstant		= "SkillXPGainConstnat" autoreadonly
 String Property ValueReductionMult				= "ReductionMult" autoreadonly
 String Property ValueMaxSkillIncreasesPerLevel	= "MaxSkillIncreasesPerLevel" autoreadonly
+; xxx
+String Property ValueConsumeGold	 			= "ConsumeGold" autoreadonly
+
+int ToggleConsumeGoldID
+
 
 Event OnPageReset(string page)
 	if(page == "")
@@ -137,25 +143,28 @@ Event OnPageReset(string page)
 		TextSaveID						= AddTextOption(LabelTextSave, ValueTextSave, saveFlags)
 		TextLoadID						= AddTextOption(LabelTextLoad, ValueTextLoad)
 		
-		AddHeaderOption(HeaderXPSettings)
-		ToggleExponentialID				= AddToggleOption(ToggleLabelExponential, UtilityQuest.ExponentialEnable)
-		SliderBaseID 					= AddSliderOption(SliderLabelBase, UtilityQuest.ExponentialBase, "{3}")
-		SliderCoefficientID 			= AddSliderOption(SliderLabelCoefficient, UtilityQuest.ExponentialCoefficient)
-		SliderConstantID				= AddSliderOption(SliderLabelConstant, UtilityQuest.ExponentialConstant)
+		;AddHeaderOption(HeaderXPSettings)
+		;ToggleExponentialID				= AddToggleOption(ToggleLabelExponential, UtilityQuest.ExponentialEnable)
+		;SliderBaseID 					= AddSliderOption(SliderLabelBase, UtilityQuest.ExponentialBase, "{3}")
+		;SliderCoefficientID 			= AddSliderOption(SliderLabelCoefficient, UtilityQuest.ExponentialCoefficient)
+		;SliderConstantID				= AddSliderOption(SliderLabelConstant, UtilityQuest.ExponentialConstant)
 		
-		
-		
-		SetCursorPosition(1)
-		AddHeaderOption(HeaderSkillXPSettings)
-		SliderSkillCoefficientID 		= AddSliderOption(SliderLabelSkillCostCoefficient, UtilityQuest.SkillXPCoefficient, "{1}")
-		SliderSkillConstantID			= AddSliderOption(SliderLabelSkillCostConstant, UtilityQuest.SkillXPConstant, "{1}")
-		SliderSkillGainCoefficientID	= AddSliderOption(SliderLabelSkillGainCoefficient, UtilityQuest.SkillXPGainCoefficient, "{1}")
-		SliderSkillGainConstantID		= AddSliderOption(SliderLabelSkillGainConstant, UtilityQuest.SkillXPGainConstant)
-		SliderSkillMaxPerLevelID		= AddSliderOption(SliderLabelSkillIncreasesPerLevel, UtilityQuest.MaxSkillIncreasesPerLevel)
-		
+		; xxx
 		AddHeaderOption(HeaderGoldSettings)
-		ToggleReductionID				= AddToggleOption(ToggleLabelReduction, UtilityQuest.ReductionMult > 0.0)
-		SliderReductionMultID			= AddSliderOption(SliderLabelReductionMult, UtilityQuest.ReductionMult, "{2}")
+		ToggleConsumeGoldID				= AddToggleOption("Consume gold", UtilityQuest.consumeGold)
+		
+		
+		;SetCursorPosition(1)
+		;AddHeaderOption(HeaderSkillXPSettings)
+		;SliderSkillCoefficientID 		= AddSliderOption(SliderLabelSkillCostCoefficient, UtilityQuest.SkillXPCoefficient, "{1}")
+		;SliderSkillConstantID			= AddSliderOption(SliderLabelSkillCostConstant, UtilityQuest.SkillXPConstant, "{1}")
+		;SliderSkillGainCoefficientID	= AddSliderOption(SliderLabelSkillGainCoefficient, UtilityQuest.SkillXPGainCoefficient, "{1}")
+		;SliderSkillGainConstantID		= AddSliderOption(SliderLabelSkillGainConstant, UtilityQuest.SkillXPGainConstant)
+		;SliderSkillMaxPerLevelID		= AddSliderOption(SliderLabelSkillIncreasesPerLevel, UtilityQuest.MaxSkillIncreasesPerLevel)
+		
+		;AddHeaderOption(HeaderGoldSettings)
+		;ToggleReductionID				= AddToggleOption(ToggleLabelReduction, UtilityQuest.ReductionMult > 0.0)
+		;SliderReductionMultID			= AddSliderOption(SliderLabelReductionMult, UtilityQuest.ReductionMult, "{2}")
 		
 		
 	elseif( page == "Debug")
@@ -165,8 +174,16 @@ Event OnPageReset(string page)
 		AddTextOption(SliderLabelVersion, aaaGoldXPVersion.getValue() as int , OPTION_FLAG_DISABLED)
 		ToggleGoldXPEnableID			= AddToggleOption(ToggleLabelGoldXPEnable, EffectQuest.EnableQuest)
 		SetCursorPosition(1)
-		AddTextOption(SliderLabelDebugCurrentXP, aaaGoldXPBuffered.getValue() as int, OPTION_FLAG_DISABLED)
-		AddTextOption(SliderLabelDebugSkillXP, aaaGoldXPSkillXPBuffered.getValue() as int, OPTION_FLAG_DISABLED)
+		if (UtilityQuest.consumeGold)
+			AddTextOption("EffectQuest running?", EffectQuest.IsRunning(), OPTION_FLAG_DISABLED)
+			AddTextOption("EffectQuest.EnableQuest", EffectQuest.EnableQuest, OPTION_FLAG_DISABLED)
+			AddTextOption("Gold in inventory", Game.GetPlayer().GetGoldAmount() as int, OPTION_FLAG_DISABLED)
+			AddTextOption("Cost to increase lowest skill", (UtilityQuest.GoldXPToLevelSkill(UtilityQuest.getLowestSkillValue())) as int, OPTION_FLAG_DISABLED)
+			AddTextOption("Cost to increase highest skill", (UtilityQuest.GoldXPToLevelSkill(UtilityQuest.getHighestSkillValue())) as int, OPTION_FLAG_DISABLED)
+		;else
+		;	AddTextOption(SliderLabelDebugCurrentXP, aaaGoldXPBuffered.getValue() as int, OPTION_FLAG_DISABLED)
+		;	AddTextOption(SliderLabelDebugSkillXP, aaaGoldXPSkillXPBuffered.getValue() as int, OPTION_FLAG_DISABLED)
+		endif
 	endif
 	
 EndEvent
@@ -209,6 +226,12 @@ Event OnOptionSelect(int option)
 		
 		
 		SetToggleOptionValue(option, UtilityQuest.ExponentialEnable)
+
+	; xxx
+	elseif(option == ToggleConsumeGoldID)
+		
+		UtilityQuest.consumeGold = !UtilityQuest.consumeGold
+		SetToggleOptionValue(option, UtilityQuest.consumeGold)
 		
 	elseif(option == ToggleReductionID)
 		bool bEnable = UtilityQuest.ReductionMult == 0
@@ -223,7 +246,8 @@ Event OnOptionSelect(int option)
 		SetSliderOptionValue(SliderReductionMultID, UtilityQuest.ReductionMult, "{2}", false)
 		
 	elseif(option == ToggleGoldXPEnableID)
-		bool bEnable = !EffectQuest.EnableQuest
+		bool bEnable = !(EffectQuest.EnableQuest)
+		debug.notification("Setting gold is xp to " + bEnable)
 		SetToggleOptionValue(option, bEnable)
 	
 		EffectQuest.SetState(bEnable)
@@ -343,8 +367,11 @@ Event OnOptionHighlight(int option)
 		SetInfoText(HighlightExponentialEnable)
 	elseif(option == ToggleReductionID)
 		SetInfoText(HighlightReductionEnable)
+	elseif(option == ToggleConsumeGoldID)
+		SetInfoText("The cost for leveling up a skill must be paid from your carried gold.")
 	elseif(option == MenuProfileID)
 		SetInfoText(HighlightMenuProfiles)
+
 	endif
 EndEvent
 
@@ -356,7 +383,9 @@ function loadProfile(int index)
 		UtilityQuest.ExponentialCoefficient		= UtilityQuest.ExponentialCoefficientDefault
 		UtilityQuest.ExponentialConstant 		= UtilityQuest.ExponentialConstantDefault
 		UtilityQuest.ExponentialEnable 			= UtilityQuest.ExponentialEnableDefault
-			
+		; xxx
+		UtilityQuest.consumeGold	 			= false
+		
 		UtilityQuest.SkillXPCoefficient			= UtilityQuest.SkillXPCoefficientDefault
 		UtilityQuest.SkillXPConstant			= UtilityQuest.SkillXPConstantDefault
 		UtilityQuest.SkillXPGainCoefficient		= UtilityQuest.SkillXPGainCoefficientDefault
@@ -369,6 +398,7 @@ function loadProfile(int index)
 		UtilityQuest.ExponentialCoefficient		= UtilityQuest.ExponentialCoefficientDefault
 		UtilityQuest.ExponentialConstant 		= UtilityQuest.ExponentialConstantDefault
 		UtilityQuest.ExponentialEnable 			= UtilityQuest.ExponentialEnableDefault
+		UtilityQuest.consumeGold	 			= false
 		
 		UtilityQuest.SkillXPCoefficient			= 1.0 
 		UtilityQuest.SkillXPConstant			= 1.0 
@@ -382,6 +412,7 @@ function loadProfile(int index)
 		UtilityQuest.ExponentialCoefficient		= 250
 		UtilityQuest.ExponentialConstant 		= 750
 		UtilityQuest.ExponentialEnable 			= false
+		UtilityQuest.consumeGold	 			= false
 		
 		UtilityQuest.SkillXPCoefficient			= UtilityQuest.SkillXPCoefficientDefault
 		UtilityQuest.SkillXPConstant			= UtilityQuest.SkillXPConstantDefault
@@ -396,6 +427,7 @@ function loadProfile(int index)
 		UtilityQuest.ExponentialCoefficient		= 250
 		UtilityQuest.ExponentialConstant 		= 750
 		UtilityQuest.ExponentialEnable 			= false
+		UtilityQuest.consumeGold	 			= false
 		
 		UtilityQuest.SkillXPCoefficient			= 1.0 
 		UtilityQuest.SkillXPConstant			= 1.0 
@@ -480,6 +512,8 @@ function updateMCM()
 	SetSliderOptionValue(SliderCoefficientID, UtilityQuest.ExponentialCoefficient, "{0}", true)
 	SetSliderOptionValue(SliderConstantID, UtilityQuest.ExponentialConstant, "{0}", true)
 	SetToggleOptionValue(ToggleExponentialID, UtilityQuest.ExponentialEnable, true)
+	; xxx
+	SetToggleOptionValue(ToggleConsumeGoldID, UtilityQuest.consumeGold, true)
 	
 	SetSliderOptionValue(SliderSkillCoefficientID, UtilityQuest.SkillXPCoefficient, "{1}", true)
 	SetSliderOptionValue(SliderSkillConstantID, UtilityQuest.SkillXPConstant, "{1}", true)

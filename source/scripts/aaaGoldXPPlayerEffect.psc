@@ -30,93 +30,26 @@ function Maintenance()
 
 	;register for gold events
 	AddInventoryEventFilter(GoldBase);register for updates
-
+	; register to receive 'onsleepstart' and 'onsleepstop' events
+	RegisterForSleep()
 endfunction
 
 ;============================================================Events===============================================
 
-
-Event OnItemAdded(Form akBaseItem, int aiItemCount, ObjectReference akItemReference, ObjectReference akSourceContainer)
-
-	if(UI.isMenuOpen("BarterMenu"))
-		UtilityQuest.gainGoldXP(aiItemCount)
-	elseif(akSourceContainer != None)
-	
-		if(UtilityQuest.isContainerTrackable(akSourceContainer))
-			int GoldTokenCount = akSourceContainer.getItemCount(GoldToken)
-			
-			int GoldTokenCountPlayer = getTargetActor().getItemCount(GoldToken);
-			
-			if(GoldTokenCountPlayer > 0)
-				;debug.notification("mass inventory transfer detected")
-				getTargetActor().removeItem(GoldToken, GoldTokenCountPlayer)
-				return
-			endif
-			
-			if(goldTokenCount > 0) ;need to make sure we don't gain gold xp for gold we added to containers
-			
-				if(aiItemCount > goldTokenCount)
-				
-					akSourceContainer.removeItem(goldToken, goldTokenCount)
-					
-					UtilityQuest.gainGoldXP(aiItemCount - goldTokenCount)
-					
-				else
-					akSourceContainer.removeItem(goldToken, goldTokenCount - aiItemCount)
-				endif
-			else
-				UtilityQuest.gainGoldXP(aiItemCount)
-				
-			endif
-		else
-			UnsupportedContainer.show()
-		endif
-		
-	else
-	
-		UtilityQuest.gainGoldXP(aiItemCount)
-		
-	endif
-	
-	
-	RegisterForSleep()
-	
-EndEvent
-
-Event OnItemRemoved(Form akBaseItem, int aiItemCount, ObjectReference akItemReference, ObjectReference akDestContainer)
-	
-	;If the player gives gold
-	if(UI.isMenuOpen("BarterMenu"))
-		;just a shopkeeper continue, Gold Is XP is already broken if a player can access a shop keeper's inventory directly
-	else
-		if(akDestContainer != None)
-			if(UtilityQuest.isContainerTrackable(akDestContainer))
-				akDestContainer.addItem(GoldToken, aiItemCount)
-			else
-				UnsupportedContainer.show()
-			endif
-		else
-			;triggers on paying for rooms, just let the drop exploit exist
-			;aaaGoldXPBuffered.setValue(aaaGoldXPBuffered.getValue() - getXP(aiItemCount))
-		endif
-	endif
-
-EndEvent
 
 
 
 Event OnSleepStop(bool abInterrupted)
 	;Debug.Notification("Done Sleeping")
 	
-	
 	if(!abInterrupted)
-	
-		int numLevels = UtilityQuest.GainBufferedXP()
-		if(numLevels > 0 || UtilityQuest.snooze)
-			;we leveled
+
+		; Not clear when we should show the skill levelling dialogue, as we want to be able to raise
+		; skills at will if we have enough gold.
+		int lowestCost = UtilityQuest.GoldXPToLevelSkill(UtilityQuest.getLowestSkillValue())
+		debug.notification("Cost to level lowest skill (" + UtilityQuest.getLowestSkillValue() + "): " + lowestCost)
+		if (Game.GetPlayer().GetGoldAmount() >= lowestCost)
 			UtilityQuest.snooze = UtilityQuest.LevelSkills()
-		else
-			
 		endif
 		
 		if(!UtilityQuest.snooze)
