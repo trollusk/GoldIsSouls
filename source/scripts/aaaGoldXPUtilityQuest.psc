@@ -259,7 +259,8 @@ EndFunction
 
 ;Repeatibly displays message menus until player is done leveling skills.
 bool Function LevelSkills()
-	
+
+	int levelsToGain = 0
 	int currentMenu = 0; 0 - Mage, 1 - Thief, 2 - Warrior
 	;track skills leveled-up this session
 	CheckExternalSkillGains(); see if there were any external skill gains pre-level
@@ -303,7 +304,7 @@ bool Function LevelSkills()
 					skillIncreases += 1
 					if (skillIncreases >= 10)
 						skillIncreases = 0
-						GainLevel()
+						levelsToGain += 1
 					else
 						; set XP to correct "proportion" of progress to next level, based on number of skill
 						; points gained so far
@@ -324,6 +325,11 @@ bool Function LevelSkills()
 	
 	endWhile
 
+	while levelsToGain > 0
+		GainLevel()
+		levelsToGain -= 1
+	endwhile
+	
 	UpdateLastSkillGains();we just leveled so update LastSkillGains so we catch the next set of external skill increases at next level-up
 	
 	return option == 9;If we snoozed return true
@@ -415,16 +421,20 @@ EndFunction
 
 
 Function GainLevel()
-	Game.SetPlayerExperience(Game.GetExperienceForLevel(Game.GetPlayer().GetLevel()))
+	Game.SetPlayerExperience(Game.GetExperienceForLevel(Game.GetPlayer().GetLevel()) + 10)
+	;Game.SetPlayerLevel(Game.GetPlayer().GetLevel()+1)
 	debug.notification("Leveled up!")
 EndFunction
 
 
-
-;Returns the amount of GoldXP to level
+;Returns the amount of Gold needed to go from character level currentLevel to currentLevel+1
 int Function GoldXPToLevel (int currentLevel)
-	; same formula as Dark Souls, but starting at level 12 (formula not accurate below at)
-	return (0.02*Math.Pow(currentLevel+11, 3) + 3.06*Math.Pow(currentLevel+11, 2) + 105.6*(currentLevel+11) - 895) as int
+	; same formula as Dark Souls: cubic formula starting at level 12, linear below that
+	if currentLevel < 12
+		return 656 + currentLevel*17
+	else
+		return (0.02*Math.Pow(currentLevel, 3) + 3.06*Math.Pow(currentLevel, 2) + 105.6*currentLevel - 895) as int
+	endif
 EndFunction
 
 
