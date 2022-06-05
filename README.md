@@ -23,6 +23,20 @@ The other difference is in the formula used to calculate the cost of leveling up
 Dark Souls I/II. That number is then divided by 10 to get the cost for a skill point increase (since there are 10 skill point 
 increases per level).
 
+The following table shows the cost to raise a skill 1 point starting at the given level (the total cost to gain a character 
+level is 10x this cost).
+
+| Skill Level | Cost |
+|-------|------|
+| 5     | 67   |
+| 10    | 76   |
+| 20    | 166  |
+| 40    | 781  |
+| 60    | 1813 |
+| 80    | 3359 |
+| 100   | 5514 |
+
+
 ### Uninstalling ###
 
 First disable the mod in the MCM, save and exit. Then remove the mod from your load order.
