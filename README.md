@@ -20,21 +20,22 @@ In Gold Is Souls, you spend the gold itself to increase skills. For every 10 ski
 This means you must choose how you spend your gold - do you increase your skills and level up, or do you buy gear or spells?
 
 The other difference is in the formula used to calculate the cost of leveling up. Gold Is Souls uses the same formula as 
-Dark Souls I/II. That number is then divided by 10 to get the cost for a skill point increase (since there are 10 skill point 
+Dark Souls. That number is then divided by 10 to get the cost for a skill point increase (since there are 10 skill point 
 increases per level).
 
-The following table shows the cost to raise a skill 1 point starting at the given level (the total cost to gain a character 
-level is 10x this cost).
+The following table shows the cost to raise a skill by 1 point startng at the given skill level. Ten skill point increases are needed to gain 1 character level. If you level a character to 100 by leveling 10 skills all the way to 100, this will cost about 1,765,650 gold. If you level to 100 by raising 20 skills to 50, this will cost about 417,000 gold. While this is much cheaper, you would be sacrificing the benefits of having very high skills.
 
-| Skill Level | Cost |
-|-------|------|
-| 5     | 67   |
-| 10    | 76   |
-| 20    | 166  |
-| 40    | 781  |
-| 60    | 1813 |
-| 80    | 3359 |
-| 100   | 5514 |
+
+| Skill Level | Cost for +1 point | Cumulative Cost  |
+|-------|------|------|
+| 5     | 67   | 67		|
+| 10    | 76   | 429	|
+| 20    | 166  | 1458	|
+| 40    | 781  | 10620	|
+| 50	| 1239 | 20855	|
+| 60    | 1813 | 36298	|
+| 80    | 3359 | 87853	|
+| 100   | 5514 | 176565	|
 
 
 ### Uninstalling ###
