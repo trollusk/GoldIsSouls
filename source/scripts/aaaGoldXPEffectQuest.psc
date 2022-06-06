@@ -25,9 +25,7 @@ endFunction
 
 function setState(bool enable = true)
 
-    if(EnableQuest != enable)
-        EnableQuest = enable
-    endif
+    EnableQuest = enable
     
     if(enable)
 		debug.notification("Starting Gold Is XP...")

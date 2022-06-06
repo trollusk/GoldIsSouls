@@ -46,8 +46,8 @@ Event OnSleepStop(bool abInterrupted)
 
 		; Not clear when we should show the skill levelling dialogue, as we want to be able to raise
 		; skills at will if we have enough gold.
-		int lowestCost = UtilityQuest.GoldXPToLevelSkill(UtilityQuest.getLowestSkillValue())
-		debug.notification("Cost to level lowest skill (" + UtilityQuest.getLowestSkillValue() + "): " + lowestCost)
+		int lowestCost = UtilityQuest.GoldToLevelSkill(UtilityQuest.getLowestSkillValue())
+		;debug.notification("Cost to level lowest skill (" + UtilityQuest.getLowestSkillValue() + "): " + lowestCost)
 		if (Game.GetPlayer().GetGoldAmount() >= lowestCost)
 			UtilityQuest.snooze = UtilityQuest.LevelSkills()
 		endif

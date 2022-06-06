@@ -107,7 +107,7 @@ String Property ValueMaxSkillIncreasesPerLevel	= "MaxSkillIncreasesPerLevel" aut
 ; xxx
 String Property ValueConsumeGold	 			= "ConsumeGold" autoreadonly
 
-int ToggleConsumeGoldID
+;int ToggleConsumeGoldID
 
 
 Event OnPageReset(string page)
@@ -139,9 +139,9 @@ Event OnPageReset(string page)
 			
 		
 		
-		MenuProfileID					= AddMenuOption(LabelMenuProfiles, LabelsMenuProfileCurrent[IndexProfilesCurrent])
-		TextSaveID						= AddTextOption(LabelTextSave, ValueTextSave, saveFlags)
-		TextLoadID						= AddTextOption(LabelTextLoad, ValueTextLoad)
+		;MenuProfileID					= AddMenuOption(LabelMenuProfiles, LabelsMenuProfileCurrent[IndexProfilesCurrent])
+		;TextSaveID						= AddTextOption(LabelTextSave, ValueTextSave, saveFlags)
+		;TextLoadID						= AddTextOption(LabelTextLoad, ValueTextLoad)
 		
 		;AddHeaderOption(HeaderXPSettings)
 		;ToggleExponentialID				= AddToggleOption(ToggleLabelExponential, UtilityQuest.ExponentialEnable)
@@ -151,7 +151,8 @@ Event OnPageReset(string page)
 		
 		; xxx
 		AddHeaderOption(HeaderGoldSettings)
-		ToggleConsumeGoldID				= AddToggleOption("Consume gold", UtilityQuest.consumeGold)
+		;ToggleConsumeGoldID				= AddToggleOption("Consume gold", UtilityQuest.consumeGold)
+		ToggleGoldXPEnableID			= AddToggleOption(ToggleLabelGoldXPEnable, EffectQuest.EnableQuest)
 		
 		
 		;SetCursorPosition(1)
@@ -172,14 +173,13 @@ Event OnPageReset(string page)
 		SetCursorFillMode(TOP_TO_BOTTOM)
 		
 		AddTextOption(SliderLabelVersion, aaaGoldXPVersion.getValue() as int , OPTION_FLAG_DISABLED)
-		ToggleGoldXPEnableID			= AddToggleOption(ToggleLabelGoldXPEnable, EffectQuest.EnableQuest)
 		SetCursorPosition(1)
 		if (UtilityQuest.consumeGold)
 			AddTextOption("EffectQuest running?", EffectQuest.IsRunning(), OPTION_FLAG_DISABLED)
 			AddTextOption("EffectQuest.EnableQuest", EffectQuest.EnableQuest, OPTION_FLAG_DISABLED)
 			AddTextOption("Gold in inventory", Game.GetPlayer().GetGoldAmount() as int, OPTION_FLAG_DISABLED)
-			AddTextOption("Cost to increase lowest skill", (UtilityQuest.GoldXPToLevelSkill(UtilityQuest.getLowestSkillValue())) as int, OPTION_FLAG_DISABLED)
-			AddTextOption("Cost to increase highest skill", (UtilityQuest.GoldXPToLevelSkill(UtilityQuest.getHighestSkillValue())) as int, OPTION_FLAG_DISABLED)
+			AddTextOption("Cost to increase lowest skill", (UtilityQuest.GoldToLevelSkill(UtilityQuest.getLowestSkillValue())) as int, OPTION_FLAG_DISABLED)
+			AddTextOption("Cost to increase highest skill", (UtilityQuest.GoldToLevelSkill(UtilityQuest.getHighestSkillValue())) as int, OPTION_FLAG_DISABLED)
 		;else
 		;	AddTextOption(SliderLabelDebugCurrentXP, aaaGoldXPBuffered.getValue() as int, OPTION_FLAG_DISABLED)
 		;	AddTextOption(SliderLabelDebugSkillXP, aaaGoldXPSkillXPBuffered.getValue() as int, OPTION_FLAG_DISABLED)
@@ -214,48 +214,22 @@ EndEvent
 
 Event OnOptionSelect(int option)
 
-	if(option == ToggleExponentialID)
+	;if(option == ToggleConsumeGoldID)
 		
-		UtilityQuest.ExponentialEnable = !UtilityQuest.ExponentialEnable
+	;	UtilityQuest.consumeGold = !UtilityQuest.consumeGold
+	;	SetToggleOptionValue(option, UtilityQuest.consumeGold)
 		
-		if(UtilityQuest.ExponentialEnable)
-			SetOptionFlags(SliderBaseID, OPTION_FLAG_NONE, true)
-		else
-			SetOptionFlags(SliderBaseID, OPTION_FLAG_DISABLED, true)
-		endif
-		
-		
-		SetToggleOptionValue(option, UtilityQuest.ExponentialEnable)
-
-	; xxx
-	elseif(option == ToggleConsumeGoldID)
-		
-		UtilityQuest.consumeGold = !UtilityQuest.consumeGold
-		SetToggleOptionValue(option, UtilityQuest.consumeGold)
-		
-	elseif(option == ToggleReductionID)
-		bool bEnable = UtilityQuest.ReductionMult == 0
-		SetToggleOptionValue(option, bEnable, true)
-		
-		if(bEnable)
-			UtilityQuest.ReductionMult = UtilityQuest.ReductionMultDefault
-		else
-			UtilityQuest.ReductionMult = 0.0 
-		endif
-		
-		SetSliderOptionValue(SliderReductionMultID, UtilityQuest.ReductionMult, "{2}", false)
-		
-	elseif(option == ToggleGoldXPEnableID)
-		bool bEnable = !(EffectQuest.EnableQuest)
-		debug.notification("Setting gold is xp to " + bEnable)
-		SetToggleOptionValue(option, bEnable)
+	if(option == ToggleGoldXPEnableID)
+		EffectQuest.EnableQuest = !EffectQuest.EnableQuest
+		;debug.notification("Setting gold is xp to " + bEnable)
+		SetToggleOptionValue(option, EffectQuest.EnableQuest)
 	
-		EffectQuest.SetState(bEnable)
+		EffectQuest.SetState(EffectQuest.EnableQuest)
 		
-	elseif(option == TextSaveID)
-		saveProfile(IndexProfilesCurrent)
-	elseif(option == TextLoadID)
-		loadProfile(IndexProfilesCurrent)
+	;elseif(option == TextSaveID)
+	;	saveProfile(IndexProfilesCurrent)
+	;elseif(option == TextLoadID)
+	;	loadProfile(IndexProfilesCurrent)
 		
 	endif
 EndEvent
@@ -367,8 +341,8 @@ Event OnOptionHighlight(int option)
 		SetInfoText(HighlightExponentialEnable)
 	elseif(option == ToggleReductionID)
 		SetInfoText(HighlightReductionEnable)
-	elseif(option == ToggleConsumeGoldID)
-		SetInfoText("The cost for leveling up a skill must be paid from your carried gold.")
+	;elseif(option == ToggleConsumeGoldID)
+	;	SetInfoText("The cost for leveling up a skill must be paid from your carried gold.")
 	elseif(option == MenuProfileID)
 		SetInfoText(HighlightMenuProfiles)
 
@@ -377,135 +351,135 @@ EndEvent
 
 
 ;===========================================================Utility Functions=========================================
-function loadProfile(int index)
-	if(index == IndexProfilesDefault)
-		UtilityQuest.ExponentialBase 			= UtilityQuest.ExponentialBaseDefault
-		UtilityQuest.ExponentialCoefficient		= UtilityQuest.ExponentialCoefficientDefault
-		UtilityQuest.ExponentialConstant 		= UtilityQuest.ExponentialConstantDefault
-		UtilityQuest.ExponentialEnable 			= UtilityQuest.ExponentialEnableDefault
-		; xxx
-		UtilityQuest.consumeGold	 			= false
+; function loadProfile(int index)
+	; if(index == IndexProfilesDefault)
+		; UtilityQuest.ExponentialBase 			= UtilityQuest.ExponentialBaseDefault
+		; UtilityQuest.ExponentialCoefficient		= UtilityQuest.ExponentialCoefficientDefault
+		; UtilityQuest.ExponentialConstant 		= UtilityQuest.ExponentialConstantDefault
+		; UtilityQuest.ExponentialEnable 			= UtilityQuest.ExponentialEnableDefault
 		
-		UtilityQuest.SkillXPCoefficient			= UtilityQuest.SkillXPCoefficientDefault
-		UtilityQuest.SkillXPConstant			= UtilityQuest.SkillXPConstantDefault
-		UtilityQuest.SkillXPGainCoefficient		= UtilityQuest.SkillXPGainCoefficientDefault
-		UtilityQuest.SkillXPGainConstant		= UtilityQuest.SkillXPGainConstantDefault
+		; UtilityQuest.consumeGold	 			= false
 		
-		UtilityQuest.MaxSkillIncreasesPerLevel	= UtilityQuest.MaxSkillIncreasesPerLevelDefault
-		UtilityQuest.ReductionMult				= UtilityQuest.ReductionMultDefault
-	elseif(index == IndexProfilesVanillaSkillgain)
-		UtilityQuest.ExponentialBase 			= UtilityQuest.ExponentialBaseDefault
-		UtilityQuest.ExponentialCoefficient		= UtilityQuest.ExponentialCoefficientDefault
-		UtilityQuest.ExponentialConstant 		= UtilityQuest.ExponentialConstantDefault
-		UtilityQuest.ExponentialEnable 			= UtilityQuest.ExponentialEnableDefault
-		UtilityQuest.consumeGold	 			= false
+		; UtilityQuest.SkillXPCoefficient			= UtilityQuest.SkillXPCoefficientDefault
+		; UtilityQuest.SkillXPConstant			= UtilityQuest.SkillXPConstantDefault
+		; UtilityQuest.SkillXPGainCoefficient		= UtilityQuest.SkillXPGainCoefficientDefault
+		; UtilityQuest.SkillXPGainConstant		= UtilityQuest.SkillXPGainConstantDefault
 		
-		UtilityQuest.SkillXPCoefficient			= 1.0 
-		UtilityQuest.SkillXPConstant			= 1.0 
-		UtilityQuest.SkillXPGainCoefficient		= game.getGameSettingFloat(GS_VANILLA_SKILL_GAIN_COEFFICIENT)
-		UtilityQuest.SkillXPGainConstant		= game.getGameSettingFloat(GS_VANILLA_SKILL_GAIN_CONSTANT)
+		; UtilityQuest.MaxSkillIncreasesPerLevel	= UtilityQuest.MaxSkillIncreasesPerLevelDefault
+		; UtilityQuest.ReductionMult				= UtilityQuest.ReductionMultDefault
+	; elseif(index == IndexProfilesVanillaSkillgain)
+		; UtilityQuest.ExponentialBase 			= UtilityQuest.ExponentialBaseDefault
+		; UtilityQuest.ExponentialCoefficient		= UtilityQuest.ExponentialCoefficientDefault
+		; UtilityQuest.ExponentialConstant 		= UtilityQuest.ExponentialConstantDefault
+		; UtilityQuest.ExponentialEnable 			= UtilityQuest.ExponentialEnableDefault
+		; UtilityQuest.consumeGold	 			= false
 		
-		UtilityQuest.MaxSkillIncreasesPerLevel	= UtilityQuest.MaxSkillIncreasesPerLevelDefault
-		UtilityQuest.ReductionMult				= UtilityQuest.ReductionMultDefault
-	elseif(index == IndexProfilesVanillaLevelCurve)
-		UtilityQuest.ExponentialBase 			= UtilityQuest.ExponentialBaseDefault
-		UtilityQuest.ExponentialCoefficient		= 250
-		UtilityQuest.ExponentialConstant 		= 750
-		UtilityQuest.ExponentialEnable 			= false
-		UtilityQuest.consumeGold	 			= false
+		; UtilityQuest.SkillXPCoefficient			= 1.0 
+		; UtilityQuest.SkillXPConstant			= 1.0 
+		; UtilityQuest.SkillXPGainCoefficient		= game.getGameSettingFloat(GS_VANILLA_SKILL_GAIN_COEFFICIENT)
+		; UtilityQuest.SkillXPGainConstant		= game.getGameSettingFloat(GS_VANILLA_SKILL_GAIN_CONSTANT)
 		
-		UtilityQuest.SkillXPCoefficient			= UtilityQuest.SkillXPCoefficientDefault
-		UtilityQuest.SkillXPConstant			= UtilityQuest.SkillXPConstantDefault
-		UtilityQuest.SkillXPGainCoefficient		= UtilityQuest.SkillXPGainCoefficientDefault
-		UtilityQuest.SkillXPGainConstant		= UtilityQuest.SkillXPGainConstantDefault
+		; UtilityQuest.MaxSkillIncreasesPerLevel	= UtilityQuest.MaxSkillIncreasesPerLevelDefault
+		; UtilityQuest.ReductionMult				= UtilityQuest.ReductionMultDefault
+	; elseif(index == IndexProfilesVanillaLevelCurve)
+		; UtilityQuest.ExponentialBase 			= UtilityQuest.ExponentialBaseDefault
+		; UtilityQuest.ExponentialCoefficient		= 250
+		; UtilityQuest.ExponentialConstant 		= 750
+		; UtilityQuest.ExponentialEnable 			= false
+		; UtilityQuest.consumeGold	 			= false
 		
-		UtilityQuest.MaxSkillIncreasesPerLevel	= UtilityQuest.MaxSkillIncreasesPerLevelDefault
-		UtilityQuest.ReductionMult				= UtilityQuest.ReductionMultDefault
+		; UtilityQuest.SkillXPCoefficient			= UtilityQuest.SkillXPCoefficientDefault
+		; UtilityQuest.SkillXPConstant			= UtilityQuest.SkillXPConstantDefault
+		; UtilityQuest.SkillXPGainCoefficient		= UtilityQuest.SkillXPGainCoefficientDefault
+		; UtilityQuest.SkillXPGainConstant		= UtilityQuest.SkillXPGainConstantDefault
+		
+		; UtilityQuest.MaxSkillIncreasesPerLevel	= UtilityQuest.MaxSkillIncreasesPerLevelDefault
+		; UtilityQuest.ReductionMult				= UtilityQuest.ReductionMultDefault
 	
-	elseif(index == IndexProfilesVanillaSkillGainNLevelCurve)
-		UtilityQuest.ExponentialBase 			= UtilityQuest.ExponentialBaseDefault
-		UtilityQuest.ExponentialCoefficient		= 250
-		UtilityQuest.ExponentialConstant 		= 750
-		UtilityQuest.ExponentialEnable 			= false
-		UtilityQuest.consumeGold	 			= false
+	; elseif(index == IndexProfilesVanillaSkillGainNLevelCurve)
+		; UtilityQuest.ExponentialBase 			= UtilityQuest.ExponentialBaseDefault
+		; UtilityQuest.ExponentialCoefficient		= 250
+		; UtilityQuest.ExponentialConstant 		= 750
+		; UtilityQuest.ExponentialEnable 			= false
+		; UtilityQuest.consumeGold	 			= false
 		
-		UtilityQuest.SkillXPCoefficient			= 1.0 
-		UtilityQuest.SkillXPConstant			= 1.0 
-		UtilityQuest.SkillXPGainCoefficient		= game.getGameSettingFloat(GS_VANILLA_SKILL_GAIN_COEFFICIENT)
-		UtilityQuest.SkillXPGainConstant		= game.getGameSettingFloat(GS_VANILLA_SKILL_GAIN_CONSTANT)
+		; UtilityQuest.SkillXPCoefficient			= 1.0 
+		; UtilityQuest.SkillXPConstant			= 1.0 
+		; UtilityQuest.SkillXPGainCoefficient		= game.getGameSettingFloat(GS_VANILLA_SKILL_GAIN_COEFFICIENT)
+		; UtilityQuest.SkillXPGainConstant		= game.getGameSettingFloat(GS_VANILLA_SKILL_GAIN_CONSTANT)
 		
-		UtilityQuest.MaxSkillIncreasesPerLevel	= UtilityQuest.MaxSkillIncreasesPerLevelDefault
-		UtilityQuest.ReductionMult				= UtilityQuest.ReductionMultDefault
-	elseif(index >= IndexProfilesStartCustom && index < LabelsMenuProfileCurrent.length)
+		; UtilityQuest.MaxSkillIncreasesPerLevel	= UtilityQuest.MaxSkillIncreasesPerLevelDefault
+		; UtilityQuest.ReductionMult				= UtilityQuest.ReductionMultDefault
+	; elseif(index >= IndexProfilesStartCustom && index < LabelsMenuProfileCurrent.length)
 	
-		FISSInterface fiss = FISSFactory.getFISS()
+		; FISSInterface fiss = FISSFactory.getFISS()
 		
-		if(fiss == none)
-			loadProfile(IndexProfilesDefault)
-			updateMCM()
-			return
-		endif
+		; if(fiss == none)
+			; loadProfile(IndexProfilesDefault)
+			; updateMCM()
+			; return
+		; endif
 		
-		fiss.beginLoad(FISSConfigFiles[index - IndexProfilesStartCustom])
+		; fiss.beginLoad(FISSConfigFiles[index - IndexProfilesStartCustom])
 	
-		UtilityQuest.ExponentialBase 			= fiss.loadFloat(ValueExponentialBase)
-		UtilityQuest.ExponentialCoefficient		= fiss.loadFloat(ValueExponentialCoefficient)
-		UtilityQuest.ExponentialConstant 		= fiss.loadFloat(ValueExponentialConstant)
-		UtilityQuest.ExponentialEnable 			= fiss.loadBool(ValueExponentialEnable)
+		; UtilityQuest.ExponentialBase 			= fiss.loadFloat(ValueExponentialBase)
+		; UtilityQuest.ExponentialCoefficient		= fiss.loadFloat(ValueExponentialCoefficient)
+		; UtilityQuest.ExponentialConstant 		= fiss.loadFloat(ValueExponentialConstant)
+		; UtilityQuest.ExponentialEnable 			= fiss.loadBool(ValueExponentialEnable)
 			
-		UtilityQuest.SkillXPCoefficient			= fiss.loadFloat(ValueSkillXPCoefficient)
-		UtilityQuest.SkillXPConstant			= fiss.loadFloat(ValueSkillXPConstant)
-		UtilityQuest.SkillXPGainCoefficient		= fiss.loadFloat(ValueSkillXPGainCoefficient)
-		UtilityQuest.SkillXPGainConstant		= fiss.loadFloat(ValueSkillXPGainConstant)
+		; UtilityQuest.SkillXPCoefficient			= fiss.loadFloat(ValueSkillXPCoefficient)
+		; UtilityQuest.SkillXPConstant			= fiss.loadFloat(ValueSkillXPConstant)
+		; UtilityQuest.SkillXPGainCoefficient		= fiss.loadFloat(ValueSkillXPGainCoefficient)
+		; UtilityQuest.SkillXPGainConstant		= fiss.loadFloat(ValueSkillXPGainConstant)
 		
-		UtilityQuest.MaxSkillIncreasesPerLevel	= fiss.loadInt(ValueMaxSkillIncreasesPerLevel)
-		UtilityQuest.ReductionMult				= fiss.loadFloat(ValueReductionMult)
+		; UtilityQuest.MaxSkillIncreasesPerLevel	= fiss.loadInt(ValueMaxSkillIncreasesPerLevel)
+		; UtilityQuest.ReductionMult				= fiss.loadFloat(ValueReductionMult)
 		
-		String err = fiss.endLoad()
+		; String err = fiss.endLoad()
 		
-		if(err != "")
-			Debug.notification("FISS load err: " + err)
-		endif
+		; if(err != "")
+			; Debug.notification("FISS load err: " + err)
+		; endif
 		
-	endif
+	; endif
 
-	updateMCM()
+	; updateMCM()
 		
-endFunction
+; endFunction
 
-function saveProfile(int index)
+; function saveProfile(int index)
 
-	if(index < IndexProfilesStartCustom || index >= LabelsMenuProfileCurrent.length)
-		return
-	else
-		FISSInterface fiss = FISSFactory.getFISS()
+	; if(index < IndexProfilesStartCustom || index >= LabelsMenuProfileCurrent.length)
+		; return
+	; else
+		; FISSInterface fiss = FISSFactory.getFISS()
 		
-		if(fiss == none)
-			return
-		endif
+		; if(fiss == none)
+			; return
+		; endif
 		
-		fiss.beginSave(FISSConfigFiles[index - IndexProfilesStartCustom], modName)
+		; fiss.beginSave(FISSConfigFiles[index - IndexProfilesStartCustom], modName)
 		
-		fiss.saveFloat(ValueExponentialBase, UtilityQuest.ExponentialBase)			
-		fiss.saveFloat(ValueExponentialCoefficient, UtilityQuest.ExponentialCoefficient)		
-		fiss.saveFloat(ValueExponentialConstant, UtilityQuest.ExponentialConstant)		
-		fiss.saveBool(ValueExponentialEnable, UtilityQuest.ExponentialEnable)		
+		; fiss.saveFloat(ValueExponentialBase, UtilityQuest.ExponentialBase)			
+		; fiss.saveFloat(ValueExponentialCoefficient, UtilityQuest.ExponentialCoefficient)		
+		; fiss.saveFloat(ValueExponentialConstant, UtilityQuest.ExponentialConstant)		
+		; fiss.saveBool(ValueExponentialEnable, UtilityQuest.ExponentialEnable)		
 		                                                    	
-		fiss.saveFloat(ValueSkillXPCoefficient, UtilityQuest.SkillXPCoefficient)		
-		fiss.saveFloat(ValueSkillXPConstant, UtilityQuest.SkillXPConstant)		
-		fiss.saveFloat(ValueSkillXPGainCoefficient, UtilityQuest.SkillXPGainCoefficient)	
-		fiss.saveFloat(ValueSkillXPGainConstant, UtilityQuest.SkillXPGainConstant)	
+		; fiss.saveFloat(ValueSkillXPCoefficient, UtilityQuest.SkillXPCoefficient)		
+		; fiss.saveFloat(ValueSkillXPConstant, UtilityQuest.SkillXPConstant)		
+		; fiss.saveFloat(ValueSkillXPGainCoefficient, UtilityQuest.SkillXPGainCoefficient)	
+		; fiss.saveFloat(ValueSkillXPGainConstant, UtilityQuest.SkillXPGainConstant)	
 		                                                    
-		fiss.saveInt(ValueMaxSkillIncreasesPerLevel, UtilityQuest.MaxSkillIncreasesPerLevel)
-		fiss.saveFloat(ValueReductionMult, UtilityQuest.ReductionMult)			
+		; fiss.saveInt(ValueMaxSkillIncreasesPerLevel, UtilityQuest.MaxSkillIncreasesPerLevel)
+		; fiss.saveFloat(ValueReductionMult, UtilityQuest.ReductionMult)			
 		
-		string err = fiss.endSave()
+		; string err = fiss.endSave()
 		
-		if(err != "")
-			Debug.notification("FISS save err: " + err)
-		endif
-	endif
-endFunction
+		; if(err != "")
+			; Debug.notification("FISS save err: " + err)
+		; endif
+	; endif
+; endFunction
 
 function updateMCM()
 	SetSliderOptionValue(SliderBaseID, UtilityQuest.ExponentialBase, "{3}", true)
@@ -513,7 +487,8 @@ function updateMCM()
 	SetSliderOptionValue(SliderConstantID, UtilityQuest.ExponentialConstant, "{0}", true)
 	SetToggleOptionValue(ToggleExponentialID, UtilityQuest.ExponentialEnable, true)
 	; xxx
-	SetToggleOptionValue(ToggleConsumeGoldID, UtilityQuest.consumeGold, true)
+	;SetToggleOptionValue(ToggleConsumeGoldID, UtilityQuest.consumeGold, true)
+	SetToggleOptionValue(ToggleGoldXPEnableID, EffectQuest.EnableQuest, true)
 	
 	SetSliderOptionValue(SliderSkillCoefficientID, UtilityQuest.SkillXPCoefficient, "{1}", true)
 	SetSliderOptionValue(SliderSkillConstantID, UtilityQuest.SkillXPConstant, "{1}", true)
