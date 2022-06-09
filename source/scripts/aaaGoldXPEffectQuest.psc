@@ -11,32 +11,31 @@ float[]                 Property SavedSkillOffsetMult  auto
 float                   Property SavedfXPPerSkillRank auto
 int                     Property SavediTrainingNumAllowedPerLevel auto
 
+
 function maintenance()
 
-    if(EnableQuest)
-        ;Set global settings these are not persistent via saves
-        ;Debug.notification("maintenance called")
-        saveGameSettings()
-        zeroGameSettings()
-        
-    endif
+	if game.getGameSettingFloat(fXPPerSkillRank) > 0.0
+		saveGameSettings()
+		debug.notification("Starting Gold Is Souls...")
+	endif
+	zeroGameSettings()
 
 endFunction
 
-function setState(bool enable = true)
+function SetState(bool enable)
 
-    EnableQuest = enable
+    ; EnableQuest = enable
     
-    if(enable)
-		debug.notification("Starting Gold Is XP...")
-		saveGameSettings()
-		zeroGameSettings()
-		start()
-	else
-		debug.notification("Stopping Gold Is XP...")
-		revertGameSettings()
-		stop()
-	endif
+    ; if(enable)
+		; debug.notification("Starting Gold Is Souls...")
+		; saveGameSettings()
+		; zeroGameSettings()
+		; start()
+	; else
+		; debug.notification("Stopping Gold Is Souls...")
+		; revertGameSettings()
+		; stop()
+	; endif
 endFunction
 
 
