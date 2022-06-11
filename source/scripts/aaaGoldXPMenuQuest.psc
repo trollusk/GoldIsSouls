@@ -113,7 +113,7 @@ String Property ValueMaxSkillIncreasesPerLevel	= "MaxSkillIncreasesPerLevel" aut
 
 Event OnPageReset(string page)
 	if(page == "")
-		LoadCustomContent(IconLocation)
+		LoadCustomContent(IconLocation, 50, 50)
 		return
 	endif
 	
