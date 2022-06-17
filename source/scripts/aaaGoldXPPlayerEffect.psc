@@ -29,7 +29,7 @@ EndEvent
 function Maintenance()
 
 	;register for gold events
-	AddInventoryEventFilter(GoldBase);register for updates
+	;AddInventoryEventFilter(GoldBase);register for updates
 	; register to receive 'onsleepstart' and 'onsleepstop' events
 	RegisterForSleep()
 endfunction
@@ -49,18 +49,17 @@ Event OnSleepStop(bool abInterrupted)
 		int lowestCost = UtilityQuest.GoldToLevelSkill(UtilityQuest.getLowestSkillValue())
 		;debug.notification("Cost to level lowest skill (" + UtilityQuest.getLowestSkillValue() + "): " + lowestCost)
 		if (Game.GetPlayer().GetGoldAmount() >= lowestCost)
-			UtilityQuest.snooze = UtilityQuest.LevelSkills()
+			UtilityQuest.LevelSkills()
 		endif
 		
-		if(!UtilityQuest.snooze)
-			UnregisterForSleep()
-		else
-			RegisterForSleep()
-		endif
+		; if(!UtilityQuest.snooze)
+			; UnregisterForSleep()
+		; else
+		RegisterForSleep()
+		; endif
 	endif
 	
 	UtilityQuest.SetAllVanillaSkillXPToZero(); incrementSkill preserves the xp to level value.  So effectively you are gaining skillXP, not simply a skill point.  This removes that gained xp.
-	
 	
 EndEvent
 
@@ -81,6 +80,6 @@ endstate
 
 
 function cleanup()
-	removeAllInventoryEventFilters()
+	;removeAllInventoryEventFilters()
 	unregisterForSleep()
 endFunction

@@ -205,7 +205,7 @@ EndFunction
 
 
 ;Repeatibly displays message menus until player is done leveling skills.
-bool Function LevelSkills()
+Function LevelSkills()
 
 	int levelsToGain = 0
 	int currentMenu = 0; 0 - Mage, 1 - Thief, 2 - Warrior
@@ -279,7 +279,7 @@ bool Function LevelSkills()
 	
 	UpdateLastSkillGains();we just leveled so update LastSkillGains so we catch the next set of external skill increases at next level-up
 	
-	return option == 9;If we snoozed return true
+	;return option == 9;If we snoozed return true
 EndFunction
 
 
