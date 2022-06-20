@@ -11,15 +11,20 @@ float[]                 Property SavedSkillOffsetMult  auto
 float                   Property SavedfXPPerSkillRank auto
 int                     Property SavediTrainingNumAllowedPerLevel auto
 
+Quest property trainerQuest auto
+bool property trainerQuestSuspended auto
+
 
 function maintenance()
 
-	if game.getGameSettingFloat(fXPPerSkillRank) > 0.0
-		saveGameSettings()
-		debug.notification("Starting Gold Is Souls...")
-	endif
-	zeroGameSettings()
-
+	;if EnableQuest
+		if game.getGameSettingFloat(fXPPerSkillRank) > 0.0
+			saveGameSettings()
+			debug.notification("Starting Gold Is Souls...")
+		endif
+		zeroGameSettings()
+	;endif
+	
 endFunction
 
 function SetState(bool enable)
@@ -52,7 +57,14 @@ function zeroGameSettings()
     Game.SetGameSettingFloat(fXPPerSkillRank, 0.0)
     Game.SetGameSettingInt(iTrainingNumAllowedPerLevel, 0)
 
+	if trainerQuest.IsRunning()
+		trainerQuest.Stop()
+		trainerQuestSuspended = true
+	endif
+
 endFunction
+
+
 
 function saveGameSettings()
     int i = 0
@@ -86,6 +98,11 @@ function revertGameSettings()
     
     game.setGameSettingInt(iTrainingNumAllowedPerLevel, SavediTrainingNumAllowedPerLevel)
     game.setGameSettingFloat(fXPPerSkillRank, SavedfXPPerSkillRank)
+	
+	if trainerQuestSuspended && !(trainerQuest.IsRunning())
+		trainerQuest.Start()
+		trainerQuestSuspended = false
+	endif
 
 endFunction
 

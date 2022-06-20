@@ -84,7 +84,7 @@ String Property IconLocation auto
 ; int SliderGoldLogPowerID
 ; int ToggleExponentialID
 ; int ToggleReductionID
-;int ToggleGoldXPEnableID
+int ToggleGoldXPEnableID
 int UninstallID
 
 ; int IndexProfilesCurrent = 0
@@ -123,7 +123,7 @@ Event OnPageReset(string page)
 		SetCursorPosition(0)
 				
 		AddHeaderOption(HeaderGoldSettings)
-		;ToggleGoldXPEnableID			= AddToggleOption(ToggleLabelGoldXPEnable, EffectQuest.EnableQuest, OPTION_FLAG_NONE)
+		;ToggleGoldXPEnableID			= AddToggleOption("Enable mod", EffectQuest.EnableQuest, OPTION_FLAG_NONE)
 		UninstallID = AddTextOption("Uninstall Gold Is Souls", none, OPTION_FLAG_NONE)
 		AddEmptyOption()
 		AddHeaderOption("Debug info")
@@ -138,8 +138,19 @@ EndEvent
 
 
 Event OnOptionSelect(int option)
-		
-	if option == UninstallID
+	
+	if option == ToggleGoldXPEnableID
+		if EffectQuest.EnableQuest
+			EffectQuest.EnableQuest = !EffectQuest.EnableQuest
+			EffectQuest.saveGameSettings()
+			EffectQuest.zeroGameSettings()
+			debug.messagebox("Gold Is Souls activated!")
+		else	
+			EffectQuest.EnableQuest = !EffectQuest.EnableQuest
+			EffectQuest.revertGameSettings()
+			debug.messagebox("Gold Is Souls has been disabled.")
+		endif
+	elseif option == UninstallID
 		EffectQuest.revertGameSettings()
 		debug.messagebox("Gold Is Souls has been uninstalled. Now save, quit and disable the .esp.")
 	endif
@@ -172,9 +183,9 @@ Event OnOptionHighlight(int option)
 		; SetInfoText(HighlightExponentialEnable)
 	; elseif(option == ToggleReductionID)
 		; SetInfoText(HighlightReductionEnable)
-	;elseif(option == ToggleConsumeGoldID)
-	;	SetInfoText("The cost for leveling up a skill must be paid from your carried gold.")
-	if(option == UninstallID)
+	if(option == ToggleGoldXPEnableID)
+		SetInfoText("Enable or disable Gold Is Souls.")
+	elseif(option == UninstallID)
 		SetInfoText("Uninstall the mod and restore the normal Skyrim leveling system.")
 	endif
 EndEvent
