@@ -23,7 +23,7 @@ EndEvent
 
 
 Event OnSleepStop(bool abInterrupted)
-	Debug.Notification("Done Sleeping")
+	;Debug.Notification("Done Sleeping")
 	
 	if !abInterrupted
 		if mcmOptions.enableGoldIsSouls
