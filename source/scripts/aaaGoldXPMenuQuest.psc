@@ -2,114 +2,38 @@ Scriptname aaaGoldXPMenuQuest extends SKI_ConfigBase
 
 aaaGoldXPUtilityQuest Property UtilityQuest auto
 aaaGoldXPEffectQuest  Property EffectQuest auto
-
-;vars need to be global so that menu scripts and event scripts operate on the same config
-
-; GlobalVariable Property aaaGoldXPBuffered auto
-; GlobalVariable Property aaaGoldXPSkillXPBuffered auto
-; GlobalVariable Property aaaGoldXPVersion auto
-
-
-;Text Properties
-; String Property SliderLabelBase auto
-; String Property SliderLabelCoefficient auto
-; String Property SliderLabelConstant auto
-; String Property SliderLabelSkillCostCoefficient auto
-; String Property SliderLabelSkillCostConstant auto
-; String Property SliderLabelSkillGainCoefficient auto
-; String Property SliderLabelSkillGainConstant auto
-; String Property SliderLabelSkillIncreasesPerLevel auto
-; String Property SliderLabelReductionMult auto
-; String Property SliderLabelVersion auto
-
-
-; String Property SliderLabelDebugCurrentXP auto
-; String Property SliderLabelDebugSkillXP auto
-
-; String Property ToggleLabelExponential auto
-; String Property ToggleLabelReduction auto
-;String Property ToggleLabelGoldXPEnable Auto
-
-; String Property LabelMenuProfiles auto
-
-; String[] Property LabelsMenuProfile auto
-; String[] Property LabelsMenuProfileFISS auto
-; String[] LabelsMenuProfileCurrent
-; String[] Property FISSConfigFiles auto
-
-; String Property LabelTextSave auto
-; String Property LabelTextLoad auto
-; String Property ValueTextSave auto
-; String Property ValueTextLoad auto
-
-; String Property HighlightXPEquation auto
-; String Property HighlightSkillEquation auto
-; String Property HighlightSkillGain auto
-; String Property HighlightSkillMaxPerLevel auto
-; String Property HighlightReductionEquation auto
-; String Property HighlightExponentialEnable auto
-; String Property HighlightReductionEnable auto
-; String Property HighlightXPEquationAlt auto
-; string Property HighlightMenuProfiles auto
-
-; String Property HeaderXPSettings auto
-; String Property HeaderSkillXPSettings auto
-String Property HeaderGoldSettings auto
-
-; String Property GS_VANILLA_SKILL_GAIN_CONSTANT = "fXPLevelUpBase" auto
-; String Property GS_VANILLA_SKILL_GAIN_COEFFICIENT = "fXPLevelUpMult" auto
-
+aaaGoldIsSoulsKillQuest property KillQuest auto
 String Property IconLocation auto
 
-; int Property IndexProfilesDefault auto
-; int Property IndexProfilesVanillaSkillGain auto
-; int Property IndexProfilesVanillaLevelCurve auto
-; int Property IndexProfilesVanillaSkillGainNLevelCurve auto
-; int Property IndexProfilesStartCustom auto
+LocationRefType property locRefTypeBoss auto
+LocationRefType property locRefTypeDLC2Boss1 auto
+bool property enableGoldIsSouls auto
+Float property npcGoldScalingFactor auto
+bool property giveGoldToKilledNPCs  auto
+
+;
+bool _enablemod
+bool _givegoldtonpcs
+float _goldscalingfactor
+
+; IDs of entries in MCM
+;int ToggleGoldXPEnableID
+int ToggleGiveGoldToNPCsID
+int EnableModID
+;int UninstallID
+int GoldScalingFactorID
 
 
-; int SliderBaseID
-; int SliderCoefficientID
-; int SliderConstantID
-; int SliderSkillCoefficientID
-; int SliderSkillConstantID
-; int SliderSkillGainConstantID
-; int SliderSkillGainCoefficientID
-; int SliderSkillMaxPerLevelID
-; int SliderReductionMultID
-; int MenuProfileID
-; int TextLoadID
-; int TextSaveID
-
-; int SliderGoldLogPowerID
-; int ToggleExponentialID
-; int ToggleReductionID
-int ToggleGoldXPEnableID
-int UninstallID
-
-; int IndexProfilesCurrent = 0
-
-; Spell Property GoldXPSpell auto
-
-
-;loadvalues
-; String Property ValueExponentialEnable 			= "ExponentialEnable" autoreadonly
-; String Property ValueExponentialBase			= "ExponentialBase" autoreadonly
-; String Property ValueExponentialCoefficient		= "ExponentialCoefficient" autoreadonly
-; String Property ValueExponentialConstant		= "ExponentialConstant" autoreadonly
-; String Property ValueSkillXPCoefficient			= "SkillXPCoefficient" autoreadonly
-; String Property ValueSkillXPConstant			= "SkillXPConstant" autoreadonly
-; String Property ValueSkillXPGainCoefficient 	= "SkillXPGainCoefficient" autoreadonly
-; String Property ValueSkillXPGainConstant		= "SkillXPGainConstnat" autoreadonly
-; String Property ValueReductionMult				= "ReductionMult" autoreadonly
-; String Property ValueMaxSkillIncreasesPerLevel	= "MaxSkillIncreasesPerLevel" autoreadonly
-; xxx
-;String Property ValueConsumeGold	 			= "ConsumeGold" autoreadonly
-
-;int ToggleConsumeGoldID
+Event OnConfigInit()
+	_enablemod = enableGoldIsSouls
+	_givegoldtonpcs = giveGoldToKilledNPCs
+	_goldscalingfactor = npcGoldScalingFactor
+EndEvent
 
 
 Event OnPageReset(string page)
+	Actor npc = (Game.GetCurrentCrosshairRef() as Actor)
+
 	if(page == "")
 		LoadCustomContent(IconLocation, 50, 50)
 		return
@@ -120,18 +44,34 @@ Event OnPageReset(string page)
 	if(page == "Settings")
 		
 		SetCursorFillMode(TOP_TO_BOTTOM)
-		SetCursorPosition(0)
+		SetCursorPosition(0)		; top of left column
 				
-		AddHeaderOption(HeaderGoldSettings)
-		;ToggleGoldXPEnableID			= AddToggleOption("Enable mod", EffectQuest.EnableQuest, OPTION_FLAG_NONE)
-		UninstallID = AddTextOption("Uninstall Gold Is Souls", none, OPTION_FLAG_NONE)
+		AddHeaderOption("Mod settings")
+		EnableModID			= AddToggleOption("Enable mod", enableGoldIsSouls, OPTION_FLAG_NONE)
+		;UninstallID = AddTextOption("Uninstall Gold Is Souls", none, OPTION_FLAG_NONE)
 		AddEmptyOption()
+		ToggleGiveGoldToNPCsID			= AddToggleOption("Killed NPCs drop extra gold", giveGoldToKilledNPCs, OPTION_FLAG_NONE)
+		GoldScalingFactorID 			= AddSliderOption("Scale extra gold by:", npcGoldScalingFactor, "{1}x", OPTION_FLAG_NONE)
+		
+		SetCursorPosition(1)		; top of right column
 		AddHeaderOption("Debug info")
-		AddEmptyOption()
 		AddTextOption("Gold in inventory", Game.GetPlayer().GetGoldAmount() as int, OPTION_FLAG_DISABLED)
 		AddTextOption("Cost to increase lowest skill", (UtilityQuest.GoldToLevelSkill(UtilityQuest.getLowestSkillValue())) as int, OPTION_FLAG_DISABLED)
 		AddTextOption("Cost to increase highest skill", (UtilityQuest.GoldToLevelSkill(UtilityQuest.getHighestSkillValue())) as int, OPTION_FLAG_DISABLED)
-		AddTextOption("Progress towards next level", UtilityQuest.skillIncreases as int, OPTION_FLAG_DISABLED)
+		AddTextOption("Progress towards next level", (UtilityQuest.skillIncreases as int) + "/10", OPTION_FLAG_DISABLED)
+		if npc
+			float damageReduction = (0.12 * npc.GetActorValue("DamageResist")) / 100.0
+			if damageReduction > 0.8
+				damageReduction = 0.8
+			endif
+			AddEmptyOption()
+			AddTextOption("Targeted NPC", npc.GetDisplayName(), OPTION_FLAG_DISABLED)
+			AddTextOption("Damage resist", (0.12 * npc.GetActorValue("DamageResist"))/100, OPTION_FLAG_DISABLED)
+			AddTextOption("Effective Max Health", (npc.GetActorValueMax("health") / (1 - damageReduction)), OPTION_FLAG_DISABLED)
+			AddTextOption("Toughness", (GetToughness(npc)), OPTION_FLAG_DISABLED)
+			AddTextOption("Gold scaling factor", npcGoldScalingFactor, OPTION_FLAG_DISABLED)
+			AddTextOption("Gold on Death", (GetToughness(npc) * 0.5 * npcGoldScalingFactor), OPTION_FLAG_DISABLED)
+		endif
 	endif
 	
 EndEvent
@@ -139,74 +79,97 @@ EndEvent
 
 Event OnOptionSelect(int option)
 	
-	if option == ToggleGoldXPEnableID
-		if EffectQuest.EnableQuest
-			EffectQuest.EnableQuest = !EffectQuest.EnableQuest
-			EffectQuest.saveGameSettings()
-			EffectQuest.zeroGameSettings()
+	if option == EnableModID
+		if !enableGoldIsSouls
+			enableGoldIsSouls = true
+			_enablemod = true
+			SetToggleOptionValue(EnableModID, _enablemod)
+			EffectQuest.SetEnabledState(true)
 			debug.messagebox("Gold Is Souls activated!")
 		else	
-			EffectQuest.EnableQuest = !EffectQuest.EnableQuest
-			EffectQuest.revertGameSettings()
+			enableGoldIsSouls = false
+			_enablemod = false
+			SetToggleOptionValue(EnableModID, _enablemod)
+			EffectQuest.SetEnabledState(false)
 			debug.messagebox("Gold Is Souls has been disabled.")
 		endif
-	elseif option == UninstallID
-		EffectQuest.revertGameSettings()
-		debug.messagebox("Gold Is Souls has been uninstalled. Now save, quit and disable the .esp.")
+	; elseif option == UninstallID
+		; EffectQuest.revertGameSettings()
+		; debug.messagebox("Gold Is Souls has been uninstalled. Now save, quit and disable the .esp.")
+	elseif option == ToggleGiveGoldToNPCsID
+		giveGoldToKilledNPCs = !giveGoldToKilledNPCs
+		_givegoldtonpcs = giveGoldToKilledNPCs
+		SetToggleOptionValue(ToggleGiveGoldToNPCsID, _givegoldtonpcs)
 	endif
 EndEvent
+
 
 Event OnOptionSliderOpen(int option)
-	;
-EndEvent
-
-Event OnOptionSliderAccept(int option, float value)
-	;
-EndEvent
-
-Event OnOptionHighlight(int option)
-	; if(option == SliderBaseID || option == SliderCoefficientID || option == SliderConstantID)
-		; if(UtilityQuest.ExponentialBase > 1.0)
-			; SetInfoText(HighlightXPEquation)
-		; else	
-			; SetInfoText(HighlightXPEquationAlt)
-		; endif
-	; elseif(option == SliderSkillCoefficientID || option == SliderSkillConstantID)
-		; SetInfoText(HighlightSkillEquation)
-	; elseif(option == SliderSkillGainCoefficientID || option == SliderSkillGainConstantID)
-		; SetInfoText(HighlightSkillGain)
-	; elseif(option == SliderSkillMaxPerLevelID)
-		; SetInfoText(HighlightSkillMaxPerLevel)
-	; elseif(option == SliderReductionMultID)
-		; SetInfoText(HighlightReductionEquation)
-	; elseif(option == ToggleExponentialID)
-		; SetInfoText(HighlightExponentialEnable)
-	; elseif(option == ToggleReductionID)
-		; SetInfoText(HighlightReductionEnable)
-	if(option == ToggleGoldXPEnableID)
-		SetInfoText("Enable or disable Gold Is Souls.")
-	elseif(option == UninstallID)
-		SetInfoText("Uninstall the mod and restore the normal Skyrim leveling system.")
+	if option == GoldScalingFactorID
+		SetSliderDialogStartValue(npcGoldScalingFactor)
+		SetSliderDialogDefaultValue(1.0)
+		SetSliderDialogRange(0.1, 5.0)
+		SetSliderDialogInterval(0.1)
 	endif
 EndEvent
 
 
-function updateMCM()
-	; SetSliderOptionValue(SliderBaseID, UtilityQuest.ExponentialBase, "{3}", true)
-	; SetSliderOptionValue(SliderCoefficientID, UtilityQuest.ExponentialCoefficient, "{0}", true)
-	; SetSliderOptionValue(SliderConstantID, UtilityQuest.ExponentialConstant, "{0}", true)
-	; SetToggleOptionValue(ToggleExponentialID, UtilityQuest.ExponentialEnable, true)
-	; 
-	;SetToggleOptionValue(ToggleConsumeGoldID, UtilityQuest.consumeGold, true)
-	;SetToggleOptionValue(ToggleGoldXPEnableID, EffectQuest.EnableQuest, true)
+Event OnOptionSliderAccept(int option, float value)
+	if option == GoldScalingFactorID
+		npcGoldScalingFactor = value
+		_goldscalingfactor = value
+		SetSliderOptionValue(GoldScalingFactorID, npcGoldScalingFactor)
+	endif
+EndEvent
+
+
+Event OnOptionHighlight(int option)
+	if(option == EnableModID)
+		SetInfoText("Enable or disable Gold Is Souls.")
+	; elseif(option == UninstallID)
+		; SetInfoText("Uninstall the mod and restore the normal Skyrim leveling system.")
+	elseif option == GoldScalingFactorID
+		SetInfoText("Multiply the amount of extra gold given to NPCs by this number.")
+	elseif option == ToggleGiveGoldToNPCsID
+		SetInfoText("Add some extra gold to the inventory of killed NPCs. The amount is roughly based on the challenge posed by the NPC.")
+	endif
+EndEvent
+
+
+Float Function GetToughness(Actor npc)
+	float health = npc.GetActorValueMax("health")
+	;float level = npc.GetActorValue("level")
+	float damageMult = npc.GetActorValue("attackdamagemult")
+	float weaponSpeedMult = npc.GetActorValue("weaponspeedmult")
+	;float meleeDamage = npc.GetActorValue("meleedamage")
+	;float unarmedDamage = npc.GetActorValue("unarmeddamage")
+	float armorRating = npc.GetActorValue("DamageResist")
+	float damRes = (0.12 * armorRating)/100
+	int spellCount = npc.GetLeveledActorBase().GetSpellCount()
+	bool isBoss = (npc.HasRefType(locRefTypeBoss)) || (npc.HasRefType(locRefTypeDLC2Boss1))
 	
-	; SetSliderOptionValue(SliderSkillCoefficientID, UtilityQuest.SkillXPCoefficient, "{1}", true)
-	; SetSliderOptionValue(SliderSkillConstantID, UtilityQuest.SkillXPConstant, "{1}", true)
-	; SetSliderOptionValue(SliderSkillGainCoefficientID, UtilityQuest.SkillXPGainCoefficient, "{1}", true)
-	; SetSliderOptionValue(SliderSkillGainConstantID, UtilityQuest.SkillXPGainConstant, "{0}", true)
+	if damRes > 0.8
+		damRes = 0.8
+	endif
+	if damageMult < 1.0
+		damageMult += 1.0
+	endif
+	if weaponSpeedMult < 1.0
+		weaponSpeedMult += 1.0
+	endif
 	
-	; SetSliderOptionValue(SliderSkillMaxPerLevelID, UtilityQuest.MaxSkillIncreasesPerLevel, "{0}", true)
-	; SetSliderOptionValue(SliderReductionMultID, UtilityQuest.ReductionMult, "{2}", false)
+	int eHP = Math.Floor(health / (1 - damRes))
+	
+	float toughness = eHP * damageMult * weaponSpeedMult
+	if spellCount > 1
+		toughness *= 1.8
+	elseif spellCount > 0
+		toughness *= 1.2
+	endif
+	
+	if isBoss
+		toughness *= 5.0
+	endif
+	
+	return toughness
 EndFunction
-
-

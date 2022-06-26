@@ -2,6 +2,7 @@ scriptname aaaGoldXPEffectQuest extends Quest
 
 bool                    property EnableQuest auto
 aaaGoldXPUtilityQuest   property utilityquest auto
+aaaGoldXPMenuQuest		property mcmOptions auto
 
 string                  property fXPPerSkillRank                = "fXPPerSkillRank" autoreadonly
 string                  property iTrainingNumAllowedPerLevel    = "iTrainingNumAllowedPerLevel" autoreadonly
@@ -27,20 +28,22 @@ function maintenance()
 	
 endFunction
 
-function SetState(bool enable)
+function SetEnabledState(bool enable)
 
     ; EnableQuest = enable
     
-    ; if(enable)
-		; debug.notification("Starting Gold Is Souls...")
-		; saveGameSettings()
-		; zeroGameSettings()
-		; start()
-	; else
-		; debug.notification("Stopping Gold Is Souls...")
-		; revertGameSettings()
-		; stop()
-	; endif
+    if enable && !mcmOptions.enableGoldIsSouls
+		;debug.notification("Starting Gold Is Souls...")
+		mcmOptions.enableGoldIsSouls = true
+		saveGameSettings()
+		zeroGameSettings()
+		start()
+	elseif !enable && mcmOptions.enableGoldIsSouls
+		;debug.notification("Stopping Gold Is Souls...")
+		mcmOptions.enableGoldIsSouls = false
+		revertGameSettings()
+		stop()
+	endif
 endFunction
 
 
@@ -56,7 +59,10 @@ function zeroGameSettings()
     
     Game.SetGameSettingFloat(fXPPerSkillRank, 0.0)
     Game.SetGameSettingInt(iTrainingNumAllowedPerLevel, 0)
-
+	
+	; set skillIncreases so it captures player's progress to next level
+	utilityquest.skillIncreases = Math.Floor((Game.GetPlayerExperience() * 10.0) / Game.GetExperienceForLevel(Game.GetPlayer().GetLevel()))
+	
 	if trainerQuest.IsRunning()
 		trainerQuest.Stop()
 		trainerQuestSuspended = true
