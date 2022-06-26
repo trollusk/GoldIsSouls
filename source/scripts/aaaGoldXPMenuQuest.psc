@@ -1,5 +1,9 @@
 Scriptname aaaGoldXPMenuQuest extends SKI_ConfigBase  
 
+;;
+;; script for quest that controls MCM for Gold Is Souls
+;;
+
 aaaGoldXPUtilityQuest Property UtilityQuest auto
 aaaGoldXPEffectQuest  Property EffectQuest auto
 aaaGoldIsSoulsKillQuest property KillQuest auto
@@ -55,6 +59,9 @@ Event OnPageReset(string page)
 		
 		SetCursorPosition(1)		; top of right column
 		AddHeaderOption("Debug info")
+		AddTextOption("Mod enabled?", enableGoldIsSouls, OPTION_FLAG_DISABLED)
+		AddTextOption("EffectQuest running?", EffectQuest.IsRunning(), OPTION_FLAG_DISABLED)
+		AddEmptyOption()
 		AddTextOption("Gold in inventory", Game.GetPlayer().GetGoldAmount() as int, OPTION_FLAG_DISABLED)
 		AddTextOption("Cost to increase lowest skill", (UtilityQuest.GoldToLevelSkill(UtilityQuest.getLowestSkillValue())) as int, OPTION_FLAG_DISABLED)
 		AddTextOption("Cost to increase highest skill", (UtilityQuest.GoldToLevelSkill(UtilityQuest.getHighestSkillValue())) as int, OPTION_FLAG_DISABLED)
@@ -93,9 +100,6 @@ Event OnOptionSelect(int option)
 			EffectQuest.SetEnabledState(false)
 			debug.messagebox("Gold Is Souls has been disabled.")
 		endif
-	; elseif option == UninstallID
-		; EffectQuest.revertGameSettings()
-		; debug.messagebox("Gold Is Souls has been uninstalled. Now save, quit and disable the .esp.")
 	elseif option == ToggleGiveGoldToNPCsID
 		giveGoldToKilledNPCs = !giveGoldToKilledNPCs
 		_givegoldtonpcs = giveGoldToKilledNPCs

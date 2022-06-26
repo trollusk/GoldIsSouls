@@ -95,6 +95,15 @@ bool property snooze = false auto
 ;===========================================Maintenance=====================================
 
 
+Event OnInit()
+	maintenance()
+endEvent
+
+
+Event OnPlayerLoadGame()
+	maintenance()
+endEvent
+
 
 Function maintenance()
 		
@@ -252,6 +261,7 @@ Function LevelSkills()
 					if (skillIncreases >= 10)
 						skillIncreases = 0
 						levelsToGain += 1
+						Game.SetPlayerExperience(0)
 					else
 						; set XP to correct "proportion" of progress to next level, based on number of skill
 						; points gained so far

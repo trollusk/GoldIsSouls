@@ -1,5 +1,11 @@
 scriptname aaaGoldXPEffectQuest extends Quest
 
+;;
+;;  script for quest of same name, always running
+;;  that quest also has a player alias with a constant active magic effect 'aaagoldxpplayereffect' which receives
+;;  onsleepstop events
+;;
+
 bool                    property EnableQuest auto
 aaaGoldXPUtilityQuest   property utilityquest auto
 aaaGoldXPMenuQuest		property mcmOptions auto
@@ -16,33 +22,42 @@ Quest property trainerQuest auto
 bool property trainerQuestSuspended auto
 
 
+Event OnInit()
+	maintenance()
+endEvent
+
+
+Event OnPlayerLoadGame()
+	maintenance()
+endEvent
+
+
 function maintenance()
 
-	;if EnableQuest
+	if mcmOptions.enableGoldIsSouls
 		if game.getGameSettingFloat(fXPPerSkillRank) > 0.0
-			saveGameSettings()
 			debug.notification("Starting Gold Is Souls...")
+			SetEnabledState(true)
 		endif
 		zeroGameSettings()
-	;endif
+	endif
 	
 endFunction
 
-function SetEnabledState(bool enable)
 
-    ; EnableQuest = enable
+function SetEnabledState(bool enable)
     
-    if enable && !mcmOptions.enableGoldIsSouls
+    if enable 
 		;debug.notification("Starting Gold Is Souls...")
 		mcmOptions.enableGoldIsSouls = true
 		saveGameSettings()
 		zeroGameSettings()
-		start()
-	elseif !enable && mcmOptions.enableGoldIsSouls
+		;self.start()
+	else
 		;debug.notification("Stopping Gold Is Souls...")
 		mcmOptions.enableGoldIsSouls = false
 		revertGameSettings()
-		stop()
+		;self.stop()
 	endif
 endFunction
 
