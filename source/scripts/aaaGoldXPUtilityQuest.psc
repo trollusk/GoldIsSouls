@@ -216,12 +216,18 @@ EndFunction
 ;Repeatibly displays message menus until player is done leveling skills.
 Function LevelSkills()
 
+	;int levelsToGain = 0
+	int option
+	int currentMenu = 0			; 0 - Mage, 1 - Thief, 2 - Warrior
+	Actor player = Game.GetPlayer()
 	int levelsToGain = 0
-	int currentMenu = 0; 0 - Mage, 1 - Thief, 2 - Warrior
-	;track skills leveled-up this session
-	;CheckExternalSkillGains(); see if there were any external skill gains pre-level
 	
-	int option = DisplaySkillMenu(currentMenu)
+	if Game.GetPlayerExperience() >= Game.GetExperienceForLevel(player.GetLevel())
+		Debug.MessageBox("You need to level up in the Perks menu\nbefore you can gain further skills.")
+		return
+	endIf
+	
+	option = DisplaySkillMenu(currentMenu)
 	
 	while(option >= 0 && option < 8)	;didn't exit
 	
@@ -240,41 +246,38 @@ Function LevelSkills()
 		else
 			;handle the level up
 			int cost = CostToLevelSkillbyIndex(GetSkillNameIndex(currentMenu, option))
-			int remainder = Game.GetPlayer().GetGoldAmount() - cost
+			int remainder = player.GetGoldAmount() - cost
 			
 			if(remainder < 0)
 				SkillXPMenuExceedCost.show(cost)
-			elseif (ConfirmRaiseSkillMessage.show(Game.GetPlayer().GetGoldAmount(), cost) > 0)
+			elseif (ConfirmRaiseSkillMessage.show(player.GetGoldAmount(), cost) > 0)
 				; do nothing - player chose not to spend the gold
 			else
 				
-				int current_skill = game.getPlayer().getBaseActorValue(SkillNames[GetSkillNameIndex(currentMenu, option)]) as int; 
+				int current_skill = player.getBaseActorValue(SkillNames[GetSkillNameIndex(currentMenu, option)]) as int; 
 				game.IncrementSkill(SkillNames[GetSkillNameIndex(currentMenu, option)]) ;we have to check if this hit the cap
 				
-				int raised_skill = game.getPlayer().getBaseActorValue(SkillNames[GetSkillNameIndex(currentMenu, option)]) as int; 
+				int raised_skill = player.getBaseActorValue(SkillNames[GetSkillNameIndex(currentMenu, option)]) as int; 
 				
 				if(current_skill < raised_skill)
 					; skill was incremented successfully
-					Game.GetPlayer().RemoveItem(GoldBase, (cost as int))
+					player.RemoveItem(GoldBase, (cost as int))
 					; xxx Count all skill increases, level up when >= 10
 					skillIncreases += 1
 					if (skillIncreases >= 10)
 						skillIncreases = 0
+						;GainLevel()
 						levelsToGain += 1
-						Game.SetPlayerExperience(0)
+						;Game.SetPlayerExperience(0)
 					else
 						; set XP to correct "proportion" of progress to next level, based on number of skill
 						; points gained so far
-						Game.SetPlayerExperience(Game.GetExperienceForLevel(Game.GetPlayer().GetLevel() + levelsToGain ) * skillIncreases / 10.0)
+						; Game.SetPlayerExperience(Game.GetExperienceForLevel(Game.GetPlayer().GetLevel()) * skillIncreases / 10.0)
 					endif
 				else
 					SkillXPMenuCapReached.show()
-					
-				endif
+				endif			
 				
-				
-				
-				;TODO Is there a way to prevent notifications?
 			endif
 		endif
 	
@@ -282,14 +285,14 @@ Function LevelSkills()
 	
 	endWhile
 
+	float xpToGain = Game.GetExperienceForLevel(Game.GetPlayer().GetLevel() + levelsToGain) * skillIncreases / 10.0
 	while levelsToGain > 0
-		GainLevel()
+		;xpToGain += Game.GetExperienceForLevel(player.GetLevel() + levelsToGain - 1) + 1
+		xpToGain += Game.GetExperienceForLevel(player.GetLevel() + levelsToGain - 1)
 		levelsToGain -= 1
 	endwhile
 	
-	UpdateLastSkillGains();we just leveled so update LastSkillGains so we catch the next set of external skill increases at next level-up
-	
-	;return option == 9;If we snoozed return true
+	Game.SetPlayerExperience(xpToGain + 1)
 EndFunction
 
 
@@ -324,7 +327,8 @@ EndFunction
 
 
 Function GainLevel()
-	Game.SetPlayerExperience(Game.GetExperienceForLevel(Game.GetPlayer().GetLevel()) + 10)
+	;Game.SetPlayerExperience(Game.GetExperienceForLevel(Game.GetPlayer().GetLevel()) + 1)
+	Game.SetPlayerExperience(Game.GetExperienceForLevel(Game.GetPlayer().GetLevel()) * 10)
 	;Game.SetPlayerLevel(Game.GetPlayer().GetLevel()+1)
 	debug.notification("Leveled up!")
 EndFunction
