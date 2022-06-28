@@ -12,6 +12,7 @@ String Property IconLocation auto
 LocationRefType property locRefTypeBoss auto
 LocationRefType property locRefTypeDLC2Boss1 auto
 bool property enableGoldIsSouls auto
+Float property costScalingFactor auto
 Float property npcGoldScalingFactor auto
 int property minimumNPCLevel auto
 bool property giveGoldToKilledNPCs  auto
@@ -21,6 +22,7 @@ bool _enablemod
 bool _givegoldtonpcs
 float _goldscalingfactor
 int _minlevel
+float _costfactor
 
 ; IDs of entries in MCM
 ;int ToggleGoldXPEnableID
@@ -29,6 +31,7 @@ int EnableModID
 ;int UninstallID
 int GoldScalingFactorID
 int MinNPCLevelID
+int CostScalingFactorID
 
 
 Event OnConfigInit()
@@ -36,6 +39,7 @@ Event OnConfigInit()
 	_givegoldtonpcs = giveGoldToKilledNPCs
 	_goldscalingfactor = npcGoldScalingFactor
 	_minlevel = minimumNPCLevel
+	_costfactor = costScalingFactor
 EndEvent
 
 
@@ -57,6 +61,8 @@ Event OnPageReset(string page)
 		AddHeaderOption("Mod settings")
 		EnableModID			= AddToggleOption("Enable mod", enableGoldIsSouls, OPTION_FLAG_NONE)
 		AddEmptyOption()
+		CostScalingFactorID				= AddSliderOption("Multiply skill cost by:", costScalingFactor, "{2}x", OPTION_FLAG_NONE)
+		AddEmptyOption()
 		ToggleGiveGoldToNPCsID			= AddToggleOption("Killed NPCs drop extra gold", giveGoldToKilledNPCs, OPTION_FLAG_NONE)
 		GoldScalingFactorID 			= AddSliderOption("Scale extra gold by:", npcGoldScalingFactor, "{1}x", OPTION_FLAG_NONE)
 		MinNPCLevelID					= AddSliderOption("Minimum NPC level:", minimumNPCLevel, "{0}", OPTION_FLAG_NONE)
@@ -64,7 +70,7 @@ Event OnPageReset(string page)
 		SetCursorPosition(1)		; top of right column
 		AddHeaderOption("Debug info")
 		AddTextOption("Mod enabled?", enableGoldIsSouls, OPTION_FLAG_DISABLED)
-		AddTextOption("EffectQuest running?", EffectQuest.IsRunning(), OPTION_FLAG_DISABLED)
+		;AddTextOption("EffectQuest running?", EffectQuest.IsRunning(), OPTION_FLAG_DISABLED)
 		AddEmptyOption()
 		AddTextOption("Gold in inventory", Game.GetPlayer().GetGoldAmount() as int, OPTION_FLAG_DISABLED)
 		AddTextOption("Cost to increase lowest skill", (UtilityQuest.GoldToLevelSkill(UtilityQuest.getLowestSkillValue())) as int, OPTION_FLAG_DISABLED)
@@ -79,16 +85,20 @@ Event OnPageReset(string page)
 			AddEmptyOption()
 			AddTextOption("Targeted NPC", npc.GetDisplayName(), OPTION_FLAG_DISABLED)
 			AddTextOption("Spell count", npc.GetSpellCount(), OPTION_FLAG_DISABLED)
-			AddTextOption("Caster type", GetCasterType(npc), OPTION_FLAG_DISABLED)
 			AddTextOption("Damage resist", (0.12 * npc.GetActorValue("DamageResist"))/100, OPTION_FLAG_DISABLED)
 			AddTextOption("Average nonphysical resist", avgRes, OPTION_FLAG_DISABLED)
-			AddTextOption("Effective Max Health", GetEffectiveMaxHealth(npc), OPTION_FLAG_DISABLED)
-			AddTextOption("Toughness", GetToughness(npc), OPTION_FLAG_DISABLED)
-			AddTextOption("Gold scaling factor", npcGoldScalingFactor, OPTION_FLAG_DISABLED)
+			AddTextOption("Max Health", npc.GetActorValueMax("health"), OPTION_FLAG_DISABLED)
+			AddTextOption("Effective HP   health/(1-resist)", GetEffectiveMaxHealth(npc), OPTION_FLAG_DISABLED)
+			AddTextOption("Damage Mult", GetDamageMult(npc), OPTION_FLAG_DISABLED)
+			AddTextOption("Weapon Speed Mult", GetWeaponSpeedMult(npc), OPTION_FLAG_DISABLED)
+			AddTextOption("Toughness   (ehp * wpnSpeed * dmgMult)", GetToughness(npc), OPTION_FLAG_DISABLED)
+			AddTextOption("  Caster?   (x1.8)", GetNonSelfSpellCount(npc) > 0, OPTION_FLAG_DISABLED)
+			AddTextOption("  Boss?   (x5)", NPCIsBoss(npc), OPTION_FLAG_DISABLED)
+			
 			if npc.GetLevel() >= minimumNPCLevel
 				AddTextOption("Gold on Death", (GetToughness(npc) * 0.5 * npcGoldScalingFactor), OPTION_FLAG_DISABLED)
 			else
-				AddTextOption("Gold on Death", " 0 (LVL<MIN)", OPTION_FLAG_DISABLED)
+				AddTextOption("Gold on Death", "N/A", OPTION_FLAG_DISABLED)
 			endif
 		endif
 	endif
@@ -131,6 +141,11 @@ Event OnOptionSliderOpen(int option)
 		SetSliderDialogDefaultValue(1.0)
 		SetSliderDialogRange(1.0, 100.0)
 		SetSliderDialogInterval(1.0)
+	elseif option == CostScalingFactorID
+		SetSliderDialogStartValue(costScalingFactor)
+		SetSliderDialogDefaultValue(1.0)
+		SetSliderDialogRange(0.05, 10.0)
+		SetSliderDialogInterval(0.05)
 	endif
 EndEvent
 
@@ -144,15 +159,20 @@ Event OnOptionSliderAccept(int option, float value)
 		minimumNPCLevel = Math.Floor(value)
 		_minlevel = Math.Floor(value)
 		SetSliderOptionValue(MinNPCLevelID, minimumNPCLevel)
+	elseif option == CostScalingFactorID
+		costScalingFactor = value
+		_costfactor = value
+		SetSliderOptionValue(CostScalingFactorID, costScalingFactor)
 	endif
+	ForcePageReset()
 EndEvent
 
 
 Event OnOptionHighlight(int option)
 	if(option == EnableModID)
 		SetInfoText("Enable or disable Gold Is Souls.")
-	; elseif(option == UninstallID)
-		; SetInfoText("Uninstall the mod and restore the normal Skyrim leveling system.")
+	elseif option == CostScalingFactorID
+		SetInfoText("Multiply the gold cost of each skill point by this number.")
 	elseif option == GoldScalingFactorID
 		SetInfoText("Multiply the amount of extra gold given to NPCs by this number.")
 	elseif option == MinNPCLevelID
@@ -164,24 +184,15 @@ EndEvent
 
 
 Float Function GetToughness(Actor npc)
-	float damageMult = npc.GetActorValue("attackdamagemult")
-	float weaponSpeedMult = npc.GetActorValue("weaponspeedmult")
-	int casterType = GetCasterType(npc)
-	bool isBoss = (npc.HasRefType(locRefTypeBoss)) || (npc.HasRefType(locRefTypeDLC2Boss1))
-	
-	if damageMult < 1.0
-		damageMult += 1.0
-	endif
-	if weaponSpeedMult < 1.0
-		weaponSpeedMult += 1.0
-	endif
+	float damageMult = GetDamageMult(npc)
+	float weaponSpeedMult = GetWeaponSpeedMult(npc)
+	int spells = GetNonSelfSpellCount(npc)
+	bool isBoss = NPCIsBoss(npc)
 	
 	float toughness = GetEffectiveMaxHealth(npc) * damageMult * weaponSpeedMult
 	
-	if casterType > 1
+	if spells > 0
 		toughness *= 1.8
-	elseif casterType > 0
-		toughness *= 1.2
 	endif
 	
 	if isBoss
@@ -206,40 +217,69 @@ Float Function GetEffectiveMaxHealth(Actor npc)
 EndFunction
 
 
-; Return values:
-;	0	no spells
-;	1	has 1 spell that is targeted at self or touch, so not much of a caster
-;	2	has > 1 spell, or a ranged spell
-int Function GetCasterType(Actor npc)
+float Function GetDamageMult (Actor npc)
+	float mult = npc.GetActorValue("attackdamagemult")
+	if mult < 1.0
+		mult += 1.0
+	endif
+	return mult
+EndFunction
+
+
+float Function GetWeaponSpeedMult (Actor npc)
+	float mult = npc.GetActorValue("weaponspeedmult")
+	if mult < 1.0
+		mult += 1.0
+	endif
+	return mult
+EndFunction
+
+
+
+int Function GetNonSelfSpellCount(Actor npc)
 	int spellCount = npc.GetLeveledActorBase().GetSpellCount()
+	int nonSelfSpells = 0
 	
-	if spellCount > 1
-		return 2
-	elseif spellCount > 0
-		Spell firstSpell = npc.GetNthSpell(0)
-		if firstSpell.GetNumEffects() > 0
-			MagicEffect effect = firstSpell.GetNthEffectMagicEffect(0)
-			if effect.GetDeliveryType() > 1
-				; this is a ranged spell of some kind (aimed=2, target actor=3, target loc=4)
-				return 2
-			else
-				; only one spell, and its target is self or touch
-				return 1
-			endif
+	while spellCount >= 0
+		spellCount -= 1
+		Spell sp = npc.GetNthSpell(spellCount)
+		MagicEffect effect = sp.GetNthEffectMagicEffect(0)
+		if (effect.GetCastingType() > 0) && (effect.GetDeliveryType() > 0)
+			; not constant effect, not self targeted
+			nonSelfSpells += 1
 		endif
+	endwhile
+	return nonSelfSpells
+EndFunction
+
+
+float Function Minimum(float a, float b)
+	if a > b
+		return b
 	else
-		return 0
-	endif	
+		return a
+	endif
 EndFunction
 
 
 Float Function GetAverageNonPhysicalResists(Actor npc)
-	float poisonRes = npc.GetActorValue("PoisonResist")
-	float fireRes = npc.GetActorValue("FireResist")
-	float shockRes = npc.GetActorValue("ElectricResist")
-	float frostRes = npc.GetActorValue("FrostResist")
-	float magicRes = npc.GetActorValue("MagicResist")
+	float poisonRes = Minimum(npc.GetActorValue("PoisonResist"), 100)
+	float fireRes = Minimum(npc.GetActorValue("FireResist"), 100)
+	float shockRes = Minimum(npc.GetActorValue("ElectricResist"), 100)
+	float frostRes = Minimum(npc.GetActorValue("FrostResist"), 100)
+	float magicRes = Minimum(npc.GetActorValue("MagicResist"), 100)
 	; there is also diseaseresist but we ignore it
+	
+	; it seems that NPCs who are "immune" to a damage type, have resist of 1000
+	; hence we need to cap each resist at 100%, otherwise average resist will be inflated
 	
 	return (poisonRes + fireRes + shockRes + frostRes + magicRes) / 5 * 0.01
 EndFunction
+
+
+bool Function NPCIsBoss (Actor npc)
+	; aggression=0 for peaceful NPCs such as townsfolk. For some reason a lot of them have the "boss" reftype despite
+	; being harmless.
+	return (npc.GetActorValue("aggression") > 0) && ((npc.HasRefType(locRefTypeBoss)) || (npc.HasRefType(locRefTypeDLC2Boss1)))
+EndFunction
+

@@ -6,6 +6,7 @@ Message Property SKSENotInstalled auto
 Message Property SkillXPUpdated auto
 {Message when Skill XP is updated}
 
+aaaGoldXPMenuQuest property mcmOptions auto
 
 float Property  ReductionMult auto
 float Property  SkillXPCoefficient auto
@@ -334,14 +335,16 @@ Function GainLevel()
 EndFunction
 
 
-;Returns the amount of Gold needed to go from character level currentLevel to currentLevel+1
+; Returns the amount of Gold needed to go from character level currentLevel to currentLevel+1
+; same formula as Dark Souls: cubic formula starting at level 12, linear below that
 int Function GoldToLevel (int currentLevel)
-	; same formula as Dark Souls: cubic formula starting at level 12, linear below that
+	float cost 
 	if currentLevel < 12
-		return 656 + currentLevel*17
+		cost = 656 + currentLevel*17
 	else
-		return (0.02*Math.Pow(currentLevel, 3) + 3.06*Math.Pow(currentLevel, 2) + 105.6*currentLevel - 895) as int
+		cost = (0.02*Math.Pow(currentLevel, 3) + 3.06*Math.Pow(currentLevel, 2) + 105.6*currentLevel - 895)
 	endif
+	return (cost * mcmOptions.costScalingFactor) as int
 EndFunction
 
 
