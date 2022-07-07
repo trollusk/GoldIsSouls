@@ -84,7 +84,7 @@ Event OnPageReset(string page)
 			endif
 			AddEmptyOption()
 			AddTextOption("Targeted NPC", npc.GetDisplayName(), OPTION_FLAG_DISABLED)
-			AddTextOption("Spell count", npc.GetSpellCount(), OPTION_FLAG_DISABLED)
+			AddTextOption("Num. targeted spells", GetNonSelfSpellCount(npc), OPTION_FLAG_DISABLED)
 			AddTextOption("Damage resist", (0.12 * npc.GetActorValue("DamageResist"))/100, OPTION_FLAG_DISABLED)
 			AddTextOption("Average nonphysical resist", avgRes, OPTION_FLAG_DISABLED)
 			AddTextOption("Max Health", npc.GetActorValueMax("health"), OPTION_FLAG_DISABLED)
@@ -237,18 +237,19 @@ EndFunction
 
 
 int Function GetNonSelfSpellCount(Actor npc)
+	; must use ActorBase - this stuff does not work on npc
 	int spellCount = npc.GetLeveledActorBase().GetSpellCount()
 	int nonSelfSpells = 0
-	
-	while spellCount >= 0
+	while spellCount > 0
 		spellCount -= 1
-		Spell sp = npc.GetNthSpell(spellCount)
+		Spell sp = npc.GetLeveledActorBase().GetNthSpell(spellCount)
 		MagicEffect effect = sp.GetNthEffectMagicEffect(0)
 		if (effect.GetCastingType() > 0) && (effect.GetDeliveryType() > 0)
 			; not constant effect, not self targeted
 			nonSelfSpells += 1
 		endif
 	endwhile
+
 	return nonSelfSpells
 EndFunction
 

@@ -1,5 +1,7 @@
 Scriptname aaaGoldXPPlayerEffect extends activemagiceffect  
 
+import Debug
+
 ;;
 ;; script attached to active magic effect of same name
 ;; that effect is applied (constant effect) to player alias in quest aaaGoldXPEffectQuest
@@ -23,12 +25,16 @@ EndEvent
 
 
 Event OnSleepStop(bool abInterrupted)
-	;Debug.Notification("Done Sleeping")
+	Actor player = Game.GetPlayer()
 	
 	if !abInterrupted
 		if mcmOptions.enableGoldIsSouls
 			int lowestCost = UtilityQuest.GoldToLevelSkill(UtilityQuest.getLowestSkillValue())
-			if (Game.GetPlayer().GetGoldAmount() >= lowestCost)
+			if Game.GetPlayerExperience() >= Game.GetExperienceForLevel(player.GetLevel())
+				messagebox("You need to level up in the Skills and Perks menu\nbefore you can gain further skills.")
+			elseif (player.GetGoldAmount() < lowestCost)
+				notification("To increase your skills, you need at least " + lowestCost + " gold.")
+			else
 				UtilityQuest.LevelSkills()
 			endif
 		endif

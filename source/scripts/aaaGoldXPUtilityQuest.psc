@@ -223,11 +223,6 @@ Function LevelSkills()
 	Actor player = Game.GetPlayer()
 	int levelsToGain = 0
 	
-	if Game.GetPlayerExperience() >= Game.GetExperienceForLevel(player.GetLevel())
-		Debug.MessageBox("You need to level up in the Perks menu\nbefore you can gain further skills.")
-		return
-	endIf
-	
 	option = DisplaySkillMenu(currentMenu)
 	
 	while(option >= 0 && option < 8)	;didn't exit

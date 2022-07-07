@@ -38,8 +38,10 @@ function maintenance()
 		if game.getGameSettingFloat(fXPPerSkillRank) > 0.0
 			debug.notification("Starting Gold Is Souls...")
 			SetEnabledState(true)
+		else
+			; Mod already started in this savegame
+			zeroGameSettings()
 		endif
-		zeroGameSettings()
 	endif
 	
 endFunction
