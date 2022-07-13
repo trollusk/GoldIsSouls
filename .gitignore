@@ -56,3 +56,7 @@ Interface/goldxp/icon_.dds
 Interface/goldxp/icon2.dds
 *.zip
 Interface/goldissouls/goldskull.png
+.vscode/tasks.json
+.vscode/launch.json
+GoldIsSouls.ppj
+Gold Is Souls.code-workspace
