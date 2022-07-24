@@ -230,25 +230,41 @@ function LevelSkills_UIExt()
 	while bLoop
         int menuLine = 0
         int index = 0
-        string[] entries = new string[32]
-        entries[0] = "--- Increase Which Skill? (" + player.GetGoldAmount() + " gold) ---;;-1;;0;;0;;0"
+        string[] entries = new string[24]
+        entries[0] = "ZZZZZ"     ; to ensure it's sorted to the bottom
         menuLine += 1
 
         while index < skillNames.Length
             int cost = CostToLevelSkillByIndex(index)
-            if cost <= player.GetGoldAmount() 
-                entries[menuLine] = skillNames[index] + " (Lv " + (player.GetActorValue(skillNames[index]) as int) + ", cost " + cost + ")" + ";;-1;;" + index + ";;0;;0"
-                menuLine += 1
+            int skillPoints = (player.GetActorValue(skillNames[index])) as int
+            string skillPointsStr = skillPoints as string
+
+            ; pad with leading spaces
+            if skillPoints < 100
+                skillPointsStr = " " + skillPointsStr
             endif
+            if skillPoints < 10
+                skillPointsStr = " " + skillPointsStr
+            endif
+
+            entries[menuLine] = skillPoints + "  " + skillNames[index] + " (cost " + cost + ")" + "    ;;-1;;" + index + ";;0;;0"
+            menuLine += 1
             index += 1
         endwhile
 
+        ; Sort the list by skillpoints, so skills with highest investments appear first.
+        entries = PO3_SKSEFunctions.SortArrayString(entries)
+        ReverseStringArray(entries)
+
+        entries[0] = "--- Increase Which Skill? (" + player.GetGoldAmount() + " gold) ---;;-1;;0;;0;;0"
+        entries[19] = " ;;-1;;0;;0;;0"
+        entries[20] = "=== Done ===;;-1;;999;;0;;0"
         ; the 4 numbers separated by ";;" seem to be: parent, id, callback, haschildren
         ; unless we are making nested lists, the only useful one is id, which is what
         ; GetResultInt will return if that line is selected.
-        entries[menuLine] = " ;;-1;;0;;0;;0"
-        menuLine += 1
-        entries[menuLine] = "=== Done ===;;-1;;999;;0;;0"
+        ; entries[menuLine] = " ;;-1;;0;;0;;0"
+        ; menuLine += 1
+        ; entries[menuLine] = "=== Done ===;;-1;;999;;0;;0"
 
         menu.ResetMenu()
 		menu.SetPropertyStringA("appendEntries", entries)
@@ -306,6 +322,19 @@ function LevelSkills_UIExt()
 	
 	Game.SetPlayerExperience(xpToGain + 1)
 endfunction
+
+
+
+function ReverseStringArray(string[] strings)
+    int len = strings.Length
+    int index = 0
+    while index < Math.Floor(len/2.0)
+        string str = strings[index]
+        strings[index] = strings[len - index - 1]
+        strings[len - index - 1] = str
+        index += 1
+    endwhile
+endFunction
 
 
 int function GetSkillNameIndex(int menu, int option)
