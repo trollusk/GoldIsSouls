@@ -9,6 +9,7 @@ import Debug
 
 aaaGoldXPUtilityQuest Property UtilityQuest auto
 aaaGoldXPMenuQuest property mcmOptions auto
+aaaGoldXPEffectQuest property EffectQuest auto
 
 MiscObject Property GoldBase auto
 {This is a reference to the base type of gold}
@@ -19,8 +20,10 @@ Event OnInit()
 EndEvent
 
 
+; OnPlayerLoadGame events are only sent to the PLAYER (or aliases)
 Event OnPlayerLoadGame()
 	RegisterForSleep()
+	EffectQuest.maintenance()
 EndEvent
 
 

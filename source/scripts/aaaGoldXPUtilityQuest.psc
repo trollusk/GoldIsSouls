@@ -82,9 +82,6 @@ GlobalVariable Property aaaGoldXPSkillXPBuffered auto
 ;Allow indexing of skill names.
 String[] property SkillNames auto
 
-;keep track of player skill levels to detect when skills are gained from quests and books
-Int[] Property LastSkillGains auto
-
 ;keep track of how many times external events have increased your base skills.  
 int[] Property ExternalSkillGains auto
 
@@ -92,79 +89,6 @@ int[] Property ExternalSkillGains auto
 int[] Property SkillCaps auto
 
 bool property snooze = false auto
-
-;===========================================Maintenance=====================================
-
-
-Event OnInit()
-	maintenance()
-endEvent
-
-
-Event OnPlayerLoadGame()
-	maintenance()
-endEvent
-
-
-Function maintenance()
-		
-	bool arraysUninitialized = LastSkillGains[0] ==  0 ;test if arrays have been setup
-	
-	;/
-	if(SkillNames.length == 0);array is not initialized
-		;Debug.notification("initializing SkillNames")
-		SkillNames = new String[18]
-		SkillNames[0] = "Alteration"
-		SkillNames[1] = "Conjuration"
-		SkillNames[2] = "Destruction"
-		SkillNames[3] = "Enchanting"
-		SkillNames[4] = "Illusion"
-		SkillNames[5] = "Restoration"
-		SkillNames[6] = "Alchemy"
-		SkillNames[7] = "LightArmor"
-		SkillNames[8] = "Lockpicking"
-		SkillNames[9] = "Pickpocket"
-		SkillNames[10] = "Sneak"
-		SkillNames[11] = "Speechcraft"
-		SkillNames[12] = "Marksman"
-		SkillNames[13] = "Block"
-		SkillNames[14] = "HeavyArmor"
-		SkillNames[15] = "OneHanded"
-		SkillNames[16] = "Smithing"
-		SkillNames[17] = "TwoHanded"
-		
-	endif
-	/;
-	;installed on a previously started save.  Skill gains from race and previous skill books are ignored
-	if(LastSkillGains.length == 0)
-		LastSkillGains = new int[18]
-	endif
-	
-	if(arraysUninitialized)
-		RegisterForSingleUpdate(3)	;new game
-	endif
-	
-EndFunction
-
-
-Event OnUpdate()
-	deferedInit()
-	InitializeMessage.show()
-EndEvent
-
-
-function deferedInit()
-	if(game.getPlayer().getLevel() == 1.0)
-		;debug.notification("new game detected")
-		;We should determine the unmodified starting skill, some mods change this so we don't know if it's 15 or not.
-		fillIntArray(LastSkillGains, getLowestSkillValue())
-	else
-		UpdateLastSkillGains();we are loaded into an ongoing game.  There's no way to determine starting skill boosts or how many skill books plus level increase quests the player has taken.
-	endif
-	
-endFunction
-
-
 
 
 ;===========================================Utility Functions============================================
@@ -201,16 +125,6 @@ function SetAllVanillaSkillXPToZero()
 		actorvalueinfo.GetActorValueInfoByName(SkillNames[count]).SetSkillExperience(0.0)
 		count += 1
 	endWhile
-EndFunction
-
-Function UpdateLastSkillGains()
-	int i = 0
-		
-		While(i < LastSkillGains.Length)
-			LastSkillGains[i] = game.getPlayer().getBaseActorValue(SkillNames[i]) as int
-		
-			i += 1
-		endWhile
 EndFunction
 
 

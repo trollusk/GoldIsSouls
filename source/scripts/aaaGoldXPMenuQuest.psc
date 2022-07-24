@@ -45,6 +45,7 @@ EndEvent
 
 Event OnPageReset(string page)
 	Actor npc = (Game.GetCurrentCrosshairRef() as Actor)
+	ActorValueInfo avi = actorvalueinfo.GetActorValueInfoByName("Alchemy")
 
 	if(page == "")
 		LoadCustomContent(IconLocation, 50, 50)
@@ -70,7 +71,10 @@ Event OnPageReset(string page)
 		SetCursorPosition(1)		; top of right column
 		AddHeaderOption("Debug info")
 		AddTextOption("Mod enabled?", enableGoldIsSouls, OPTION_FLAG_DISABLED)
-		;AddTextOption("EffectQuest running?", EffectQuest.IsRunning(), OPTION_FLAG_DISABLED)
+		AddTextOption("EffectQuest running?", EffectQuest.IsRunning(), OPTION_FLAG_DISABLED)
+		AddTextOption("fXPPerSkillRank", Game.GetGameSettingFloat("fXPPerSkillRank"), OPTION_FLAG_DISABLED)
+		AddTextOption("SkillUseMult", avi.GetSkillUseMult(), OPTION_FLAG_DISABLED)
+		AddTextOption("SkillOffsetMult", avi.GetSkillOffsetMult(), OPTION_FLAG_DISABLED)
 		AddEmptyOption()
 		AddTextOption("Gold in inventory", Game.GetPlayer().GetGoldAmount() as int, OPTION_FLAG_DISABLED)
 		AddTextOption("Cost to increase lowest skill", (UtilityQuest.GoldToLevelSkill(UtilityQuest.getLowestSkillValue())) as int, OPTION_FLAG_DISABLED)
