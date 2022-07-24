@@ -249,31 +249,25 @@ Function LevelSkills()
 			elseif (ConfirmRaiseSkillMessage.show(player.GetGoldAmount(), cost) > 0)
 				; do nothing - player chose not to spend the gold
 			else
-				
-				int current_skill = player.getBaseActorValue(SkillNames[GetSkillNameIndex(currentMenu, option)]) as int; 
-				game.IncrementSkill(SkillNames[GetSkillNameIndex(currentMenu, option)]) ;we have to check if this hit the cap
-				
-				int raised_skill = player.getBaseActorValue(SkillNames[GetSkillNameIndex(currentMenu, option)]) as int; 
-				
-				if(current_skill < raised_skill)
-					; skill was incremented successfully
-					player.RemoveItem(GoldBase, (cost as int))
-					; xxx Count all skill increases, level up when >= 10
-					skillIncreases += 1
-					if (skillIncreases >= 10)
-						skillIncreases = 0
-						;GainLevel()
-						levelsToGain += 1
-						;Game.SetPlayerExperience(0)
-					else
-						; set XP to correct "proportion" of progress to next level, based on number of skill
-						; points gained so far
-						; Game.SetPlayerExperience(Game.GetExperienceForLevel(Game.GetPlayer().GetLevel()) * skillIncreases / 10.0)
-					endif
-				else
-					SkillXPMenuCapReached.show()
-				endif			
-				
+				string skillName = SkillNames[GetSkillNameIndex(currentMenu, option)]
+                if TryToRaiseSkill(skillName)
+                    ; successfully raised skill by 1
+                    ; xxx Count all skill increases, level up when >= 10
+                    skillIncreases += 1
+                    if (skillIncreases >= 10)
+                        skillIncreases = 0
+                        ;GainLevel()
+                        levelsToGain += 1
+                        ;Game.SetPlayerExperience(0)
+                    else
+                        ; set XP to correct "proportion" of progress to next level, based on number of skill
+                        ; points gained so far
+                        ; Game.SetPlayerExperience(Game.GetExperienceForLevel(Game.GetPlayer().GetLevel()) * skillIncreases / 10.0)
+                    endif
+                else
+                    ; failed to raise skill (because of caps, etc)
+                    SkillXPMenuCapReached.show()
+                endif
 			endif
 		endif
 	
@@ -290,6 +284,114 @@ Function LevelSkills()
 	
 	Game.SetPlayerExperience(xpToGain + 1)
 EndFunction
+
+
+; Try to raise the given skill by 1 point. If successful, deduct the gold cost. Return true if
+; successful, false if not.
+bool function TryToRaiseSkill(string skillName)
+    Actor player = Game.GetPlayer()
+    int cost = CostToLevelSkillbyName(skillName)
+    int current_skill = player.getBaseActorValue(skillName) as int
+    game.IncrementSkill(skillName)      ; we have to check if this hit the cap
+    
+    int raised_skill = player.getBaseActorValue(skillName) as int; 
+    
+    if(current_skill < raised_skill)
+        ; skill was incremented successfully
+        player.RemoveItem(GoldBase, cost)
+        return true
+    else
+        return false
+    endif			
+endfunction
+
+
+; Experimental: use UIExtensions ListMenu to increase skills. 
+function LevelSkills_UIExt()
+	UIListMenu menu=UIExtensions.GetMenu("UIListMenu") as UIListMenu
+	Actor player = Game.GetPlayer()
+	int levelsToGain = 0
+    bool bLoop = true
+
+	while bLoop
+        int menuLine = 0
+        int index = 0
+        string[] entries = new string[32]
+        entries[0] = "--- Increase Which Skill? (" + player.GetGoldAmount() + " gold) ---;;-1;;0;;0;;0"
+        menuLine += 1
+
+        while index < skillNames.Length
+            int cost = CostToLevelSkillByIndex(index)
+            if cost <= player.GetGoldAmount() 
+                entries[menuLine] = skillNames[index] + " (Lv " + (player.GetActorValue(skillNames[index]) as int) + ", cost " + cost + ")" + ";;-1;;" + index + ";;0;;0"
+                menuLine += 1
+            endif
+            index += 1
+        endwhile
+
+        ; the 4 numbers separated by ";;" seem to be: parent, id, callback, haschildren
+        ; unless we are making nested lists, the only useful one is id, which is what
+        ; GetResultInt will return if that line is selected.
+        entries[menuLine] = " ;;-1;;0;;0;;0"
+        menuLine += 1
+        entries[menuLine] = "=== Done ===;;-1;;999;;0;;0"
+
+        menu.ResetMenu()
+		menu.SetPropertyStringA("appendEntries", entries)
+		menu.OpenMenu()
+
+		int selected = menu.GetResultInt()
+		if selected == 999 || selected == -1
+			;consoleutil.printmessage("Exited ListMenu")
+		    bLoop = false
+		elseif selected > 0 
+			;consoleutil.printmessage("ListMenu: selected " + selected + " (" + skillNames[selected] + ")")
+			int cost = CostToLevelSkillByIndex(selected)
+            int remainder = player.GetGoldAmount() - cost
+			; level up skill # selected
+			;handle the level up
+			
+			if(remainder < 0)
+				SkillXPMenuExceedCost.show(cost)
+			elseif (ConfirmRaiseSkillMessage.show(player.GetGoldAmount(), cost) > 0)
+				; do nothing - player chose not to spend the gold
+			else
+				string skillName = SkillNames[selected]
+                if TryToRaiseSkill(skillName)
+                    ; update title, since player gold will have changed
+                    entries[0] = "--- Increase Which Skill? (" + player.GetGoldAmount() + " gold remaining) ---;;-1;;0;;0;;0"
+                    ; successfully raised skill by 1
+                    ; xxx Count all skill increases, level up when >= 10
+                    skillIncreases += 1
+                    if (skillIncreases >= 10)
+                        skillIncreases = 0
+                        ;GainLevel()
+                        levelsToGain += 1
+                        ;Game.SetPlayerExperience(0)
+                    else
+                        ; set XP to correct "proportion" of progress to next level, based on number of skill
+                        ; points gained so far
+                        ; Game.SetPlayerExperience(Game.GetExperienceForLevel(Game.GetPlayer().GetLevel()) * skillIncreases / 10.0)
+                    endif
+                else
+                    ; failed to raise skill (because of caps, etc)
+                    SkillXPMenuCapReached.show()
+                endif
+			endif
+		; update line (cost, etc)
+		entries[selected+1] = skillNames[selected] + " (Lv " + (player.GetActorValue(skillNames[selected]) as int) + ", cost " + cost + ")" + ";;-1;;" + selected + ";;0;;0"
+		endif
+	endwhile
+
+	float xpToGain = Game.GetExperienceForLevel(player.GetLevel() + levelsToGain) * skillIncreases / 10.0
+	while levelsToGain > 0
+		;xpToGain += Game.GetExperienceForLevel(player.GetLevel() + levelsToGain - 1) + 1
+		xpToGain += Game.GetExperienceForLevel(player.GetLevel() + levelsToGain - 1)
+		levelsToGain -= 1
+	endwhile
+	
+	Game.SetPlayerExperience(xpToGain + 1)
+endfunction
 
 
 int function GetSkillNameIndex(int menu, int option)
@@ -356,7 +458,12 @@ EndFunction
 ; Every 10 skill increases = 1 level-up, therefore the cost of levelling a skill is 1/10 of a level up.
 ; skills generally start at 5, so we convert this to 1
 int Function CostToLevelSkillbyIndex(int skillIndex)
-	int skillLevel = Game.GetPlayer().GetBaseActorValue(SkillNames[skillIndex]) as int
+	return CostToLevelSkillbyName(SkillNames[skillIndex])
+EndFunction
+
+
+int Function CostToLevelSkillbyName(string skillName)
+	int skillLevel = Game.GetPlayer().GetBaseActorValue(skillName) as int
 	return GoldToLevelSkill(skillLevel)
 EndFunction
 
