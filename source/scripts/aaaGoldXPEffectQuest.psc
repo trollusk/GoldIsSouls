@@ -32,9 +32,9 @@ endEvent
 
 function maintenance()
 
-	;ConsoleUtil.PrintMessage("Called effectquest.maintenance(), enableGoldIsSouls = " + mcmOptions.enableGoldIsSouls)
+	;skillIncreasesMessage("Called effectquest.maintenance(), enableGoldIsSouls = " + mcmOptions.enableGoldIsSouls)
 	if mcmOptions.enableGoldIsSouls
-		if game.getGameSettingFloat(fXPPerSkillRank) > 0.0
+		if game.getGameSettingInt(iTrainingNumAllowedPerLevel) > 0
 			debug.notification("Starting Gold Is Souls...")
 			;ConsoleUtil.PrintMessage("fXPPerSkillRank > 0, calling SetEnabledState(true)")
 			SetEnabledState(true)
@@ -79,12 +79,14 @@ function zeroGameSettings()
         i += 1
     EndWhile
     
-    Game.SetGameSettingFloat(fXPPerSkillRank, 0.0)
+    if !mcmOptions.normalXPFromSkills
+        Game.SetGameSettingFloat(fXPPerSkillRank, 0.0)
+    endif
     Game.SetGameSettingInt(iTrainingNumAllowedPerLevel, 0)
 	;ConsoleUtil.PrintMessage("set fXPPerSkillRank, now = " + Game.GetGameSettingFloat(fXPPerSkillRank))
 
 	; set skillIncreases so it captures player's progress to next level
-	utilityquest.skillIncreases = Math.Floor((Game.GetPlayerExperience() * 10.0) / Game.GetExperienceForLevel(Game.GetPlayer().GetLevel()))
+	utilityquest.skillIncreases = Math.Floor((Game.GetPlayerExperience() * utilityquest.MaxSkillIncreasesPerLevel) / Game.GetExperienceForLevel(Game.GetPlayer().GetLevel()))
 	
 	if trainerQuest.IsRunning()
 		trainerQuest.Stop()

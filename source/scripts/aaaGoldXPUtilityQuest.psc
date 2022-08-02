@@ -35,7 +35,7 @@ bool Property consumeGold auto
 Message Property ConfirmRaiseSkillMessage  Auto  
 
 ; We increment this variable each time a skill point is gained through spending gold. 
-; Once 10 skill points have been gained, gain a level and reset count to 0.
+; Once MaxSkillIncreasesPerLevel skill points (default 10) have been gained, gain a level and reset count to 0.
 int property skillIncreases auto
 
 
@@ -166,17 +166,18 @@ Function LevelSkills()
 				string skillName = SkillNames[GetSkillNameIndex(currentMenu, option)]
                 if TryToRaiseSkill(skillName)
                     ; successfully raised skill by 1
-                    ; xxx Count all skill increases, level up when >= 10
-                    skillIncreases += 1
-                    if (skillIncreases >= 10)
-                        skillIncreases = 0
-                        ;GainLevel()
-                        levelsToGain += 1
-                        ;Game.SetPlayerExperience(0)
-                    else
-                        ; set XP to correct "proportion" of progress to next level, based on number of skill
-                        ; points gained so far
-                        ; Game.SetPlayerExperience(Game.GetExperienceForLevel(Game.GetPlayer().GetLevel()) * skillIncreases / 10.0)
+                    if !mcmOptions.normalXPFromSkills
+                        skillIncreases += 1
+                        if (skillIncreases >= MaxSkillIncreasesPerLevel)
+                            skillIncreases = 0
+                            ;GainLevel()
+                            levelsToGain += 1
+                            ;Game.SetPlayerExperience(0)
+                        else
+                            ; set XP to correct "proportion" of progress to next level, based on number of skill
+                            ; points gained so far
+                            ; Game.SetPlayerExperience(Game.GetExperienceForLevel(Game.GetPlayer().GetLevel()) * skillIncreases / 10.0)
+                        endif
                     endif
                 else
                     ; failed to raise skill (because of caps, etc)
@@ -189,14 +190,16 @@ Function LevelSkills()
 	
 	endWhile
 
-	float xpToGain = Game.GetExperienceForLevel(Game.GetPlayer().GetLevel() + levelsToGain) * skillIncreases / 10.0
-	while levelsToGain > 0
-		;xpToGain += Game.GetExperienceForLevel(player.GetLevel() + levelsToGain - 1) + 1
-		xpToGain += Game.GetExperienceForLevel(player.GetLevel() + levelsToGain - 1)
-		levelsToGain -= 1
-	endwhile
-	
-	Game.SetPlayerExperience(xpToGain + 1)
+    if !mcmOptions.normalXPFromSkills
+        float xpToGain = Game.GetExperienceForLevel(Game.GetPlayer().GetLevel() + levelsToGain) * skillIncreases / MaxSkillIncreasesPerLevel
+        while levelsToGain > 0
+            ;xpToGain += Game.GetExperienceForLevel(player.GetLevel() + levelsToGain - 1) + 1
+            xpToGain += Game.GetExperienceForLevel(player.GetLevel() + levelsToGain - 1)
+            levelsToGain -= 1
+        endwhile
+        
+        Game.SetPlayerExperience(xpToGain + 1)
+    endif
 EndFunction
 
 
@@ -291,17 +294,19 @@ function LevelSkills_UIExt()
                     ; update title, since player gold will have changed
                     entries[0] = "--- Increase Which Skill? (" + player.GetGoldAmount() + " gold remaining) ---;;-1;;0;;0;;0"
                     ; successfully raised skill by 1
-                    ; xxx Count all skill increases, level up when >= 10
-                    skillIncreases += 1
-                    if (skillIncreases >= 10)
-                        skillIncreases = 0
-                        ;GainLevel()
-                        levelsToGain += 1
-                        ;Game.SetPlayerExperience(0)
-                    else
-                        ; set XP to correct "proportion" of progress to next level, based on number of skill
-                        ; points gained so far
-                        ; Game.SetPlayerExperience(Game.GetExperienceForLevel(Game.GetPlayer().GetLevel()) * skillIncreases / 10.0)
+                    ; xxx Count all skill increases, level up when >= MaxSkillIncreasesPerLevel
+                    if !mcmOptions.normalXPFromSkills
+                        skillIncreases += 1
+                        if (skillIncreases >= MaxSkillIncreasesPerLevel)
+                            skillIncreases = 0
+                            ;GainLevel()
+                            levelsToGain += 1
+                            ;Game.SetPlayerExperience(0)
+                        else
+                            ; set XP to correct "proportion" of progress to next level, based on number of skill
+                            ; points gained so far
+                            ; Game.SetPlayerExperience(Game.GetExperienceForLevel(Game.GetPlayer().GetLevel()) * skillIncreases / 10.0)
+                        endif
                     endif
                 else
                     ; failed to raise skill (because of caps, etc)
@@ -313,14 +318,16 @@ function LevelSkills_UIExt()
 		endif
 	endwhile
 
-	float xpToGain = Game.GetExperienceForLevel(player.GetLevel() + levelsToGain) * skillIncreases / 10.0
-	while levelsToGain > 0
-		;xpToGain += Game.GetExperienceForLevel(player.GetLevel() + levelsToGain - 1) + 1
-		xpToGain += Game.GetExperienceForLevel(player.GetLevel() + levelsToGain - 1)
-		levelsToGain -= 1
-	endwhile
-	
-	Game.SetPlayerExperience(xpToGain + 1)
+    if !mcmOptions.normalXPFromSkills
+        float xpToGain = Game.GetExperienceForLevel(player.GetLevel() + levelsToGain) * skillIncreases / MaxSkillIncreasesPerLevel
+        while levelsToGain > 0
+            ;xpToGain += Game.GetExperienceForLevel(player.GetLevel() + levelsToGain - 1) + 1
+            xpToGain += Game.GetExperienceForLevel(player.GetLevel() + levelsToGain - 1)
+            levelsToGain -= 1
+        endwhile
+        
+        Game.SetPlayerExperience(xpToGain + 1)
+    endif
 endfunction
 
 
@@ -367,12 +374,12 @@ EndFunction
 
 
 
-Function GainLevel()
-	;Game.SetPlayerExperience(Game.GetExperienceForLevel(Game.GetPlayer().GetLevel()) + 1)
-	Game.SetPlayerExperience(Game.GetExperienceForLevel(Game.GetPlayer().GetLevel()) * 10)
-	;Game.SetPlayerLevel(Game.GetPlayer().GetLevel()+1)
-	debug.notification("Leveled up!")
-EndFunction
+; Function GainLevel()
+; 	;Game.SetPlayerExperience(Game.GetExperienceForLevel(Game.GetPlayer().GetLevel()) + 1)
+; 	Game.SetPlayerExperience(Game.GetExperienceForLevel(Game.GetPlayer().GetLevel()) * 10)
+; 	;Game.SetPlayerLevel(Game.GetPlayer().GetLevel()+1)
+; 	debug.notification("Leveled up!")
+; EndFunction
 
 
 ; Returns the amount of Gold needed to go from character level currentLevel to currentLevel+1
@@ -391,9 +398,9 @@ EndFunction
 int Function GoldToLevelSkill (int skillLevel)
 	; currentSkill = current level of the skill (0-100)
 	if (skillLevel >= 5)
-		return GoldToLevel(skillLevel - 4) / 10
+		return GoldToLevel(skillLevel - 4) / MaxSkillIncreasesPerLevel
 	else
-		return GoldToLevel(1) / 10
+		return GoldToLevel(1) / MaxSkillIncreasesPerLevel
 	endif
 EndFunction
 

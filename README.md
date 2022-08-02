@@ -34,7 +34,7 @@ C = 0.02x^3 + 3.06x^2 + 105.6x - 895
 $$
 
 That number is then divided by 10 to get the cost for a skill point increase, since there are 10 skill point 
-increases per level.
+increases per level (by default, this number can be changed in the MCM.)
 
 The following table shows the cost to raise a skill by 1 point starting at the given skill level. 
 

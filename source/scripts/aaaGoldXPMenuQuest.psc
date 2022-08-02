@@ -16,13 +16,15 @@ Float property costScalingFactor auto
 Float property npcGoldScalingFactor auto
 int property minimumNPCLevel auto
 bool property giveGoldToKilledNPCs  auto
-
+bool property normalXPFromSkills auto
 ;
 bool _enablemod
 bool _givegoldtonpcs
 float _goldscalingfactor
 int _minlevel
 float _costfactor
+bool _normalXPfromskills
+int _skillincreasesperlevel
 
 ; IDs of entries in MCM
 ;int ToggleGoldXPEnableID
@@ -32,6 +34,8 @@ int EnableModID
 int GoldScalingFactorID
 int MinNPCLevelID
 int CostScalingFactorID
+int NormalXPFromSkillsID
+int SkillIncreasesPerLevelID
 
 
 Event OnConfigInit()
@@ -40,6 +44,8 @@ Event OnConfigInit()
 	_goldscalingfactor = npcGoldScalingFactor
 	_minlevel = minimumNPCLevel
 	_costfactor = costScalingFactor
+    _normalXPfromskills = normalXPFromSkills
+    _skillincreasesperlevel = UtilityQuest.MaxSkillIncreasesPerLevel
 EndEvent
 
 
@@ -63,7 +69,9 @@ Event OnPageReset(string page)
 		EnableModID			= AddToggleOption("Enable mod", enableGoldIsSouls, OPTION_FLAG_NONE)
 		AddEmptyOption()
 		CostScalingFactorID				= AddSliderOption("Multiply skill cost by:", costScalingFactor, "{2}x", OPTION_FLAG_NONE)
-		AddEmptyOption()
+		NormalXPFromSkillsID            = AddToggleOption("Normal XP from skills", normalXPFromSkills, OPTION_FLAG_NONE)
+        SkillIncreasesPerLevelID        = AddSliderOption("Skill points to gain 1 level:", UtilityQuest.MaxSkillIncreasesPerLevel, "{0}", OPTION_FLAG_NONE)
+        AddEmptyOption()
 		ToggleGiveGoldToNPCsID			= AddToggleOption("Killed NPCs drop extra gold", giveGoldToKilledNPCs, OPTION_FLAG_NONE)
 		GoldScalingFactorID 			= AddSliderOption("Scale extra gold by:", npcGoldScalingFactor, "{1}x", OPTION_FLAG_NONE)
 		MinNPCLevelID					= AddSliderOption("Minimum NPC level:", minimumNPCLevel, "{0}", OPTION_FLAG_NONE)
@@ -79,8 +87,12 @@ Event OnPageReset(string page)
 		AddTextOption("Gold in inventory", Game.GetPlayer().GetGoldAmount() as int, OPTION_FLAG_DISABLED)
 		AddTextOption("Cost to increase lowest skill", (UtilityQuest.GoldToLevelSkill(UtilityQuest.getLowestSkillValue())) as int, OPTION_FLAG_DISABLED)
 		AddTextOption("Cost to increase highest skill", (UtilityQuest.GoldToLevelSkill(UtilityQuest.getHighestSkillValue())) as int, OPTION_FLAG_DISABLED)
-		AddTextOption("Progress towards next level", (UtilityQuest.skillIncreases as int) + "/10", OPTION_FLAG_DISABLED)
-		if npc
+		if normalXPFromSkills
+            AddTextOption("Progress towards next level", (Game.GetPlayerExperience() as int) + "/" + (Game.GetExperienceForLevel(Game.GetPlayer().GetLevel()) as int), OPTION_FLAG_DISABLED)
+        else
+            AddTextOption("Progress towards next level", (UtilityQuest.skillIncreases as int) + "/" + UtilityQuest.MaxSkillIncreasesPerLevel, OPTION_FLAG_DISABLED)
+		endif
+        if npc
 			float damageReduction = (0.12 * npc.GetActorValue("DamageResist")) / 100.0
 			float avgRes = GetAverageNonPhysicalResists(npc)
 			if damageReduction > 0.8
@@ -130,6 +142,18 @@ Event OnOptionSelect(int option)
 		giveGoldToKilledNPCs = !giveGoldToKilledNPCs
 		_givegoldtonpcs = giveGoldToKilledNPCs
 		SetToggleOptionValue(ToggleGiveGoldToNPCsID, _givegoldtonpcs)
+	elseif option == NormalXPFromSkillsID
+		normalXPFromSkills = !normalXPFromSkills
+		_normalXPfromskills = normalXPFromSkills
+		SetToggleOptionValue(NormalXPFromSkillsID, _normalXPfromskills)
+        ; if toggled on, restore fXPPerSkillRank
+        ; if toggled off, zero it
+        if normalXPFromSkills
+            Game.SetGameSettingFloat("fXPPerSkillRank", EffectQuest.SavedfXPPerSkillRank)
+        else
+            EffectQuest.SavedfXPPerSkillRank = Game.getGameSettingFloat("fXPPerSkillRank")
+            Game.SetGameSettingFloat("fXPPerSkillRank", 0.0)
+        endif
 	endif
 EndEvent
 
@@ -150,6 +174,11 @@ Event OnOptionSliderOpen(int option)
 		SetSliderDialogDefaultValue(1.0)
 		SetSliderDialogRange(0.05, 10.0)
 		SetSliderDialogInterval(0.05)
+	elseif option == SkillIncreasesPerLevelID
+		SetSliderDialogStartValue(UtilityQuest.MaxSkillIncreasesPerLevel)
+		SetSliderDialogDefaultValue(10.0)
+		SetSliderDialogRange(3.0, 50.0)
+		SetSliderDialogInterval(1.0)
 	endif
 EndEvent
 
@@ -167,6 +196,10 @@ Event OnOptionSliderAccept(int option, float value)
 		costScalingFactor = value
 		_costfactor = value
 		SetSliderOptionValue(CostScalingFactorID, costScalingFactor)
+	elseif option == SkillIncreasesPerLevelID
+		UtilityQuest.MaxSkillIncreasesPerLevel = (value as int)
+		_skillincreasesperlevel = (value as int)
+		SetSliderOptionValue(SkillIncreasesPerLevelID, UtilityQuest.MaxSkillIncreasesPerLevel)
 	endif
 	ForcePageReset()
 EndEvent
@@ -181,8 +214,12 @@ Event OnOptionHighlight(int option)
 		SetInfoText("Multiply the amount of extra gold given to NPCs by this number.")
 	elseif option == MinNPCLevelID
 		SetInfoText("Only give extra gold if NPC is of this level or higher.")
+	elseif option == NormalXPFromSkillsID
+		SetInfoText("Instead of gaining a level for every " + UtilityQuest.MaxSkillIncreasesPerLevel + " skill points, use the original Skyrim system, where the number of skill points required to gain a level increases as the player's level increases.")
 	elseif option == ToggleGiveGoldToNPCsID
 		SetInfoText("Add some extra gold to the inventory of killed NPCs. The amount is roughly based on the challenge posed by the NPC.")
+	elseif option == SkillIncreasesPerLevelID
+		SetInfoText("The number of skill points the player must gain in order to gain one level, if 'normal XP from skills' is false.")
 	endif
 EndEvent
 
