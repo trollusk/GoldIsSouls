@@ -17,6 +17,8 @@ Float property npcGoldScalingFactor auto
 int property minimumNPCLevel auto
 bool property giveGoldToKilledNPCs  auto
 bool property normalXPFromSkills auto
+bool property useOldMenu auto
+
 ;
 bool _enablemod
 bool _givegoldtonpcs
@@ -25,6 +27,7 @@ int _minlevel
 float _costfactor
 bool _normalXPfromskills
 int _skillincreasesperlevel
+bool _useoldmenu
 
 ; IDs of entries in MCM
 ;int ToggleGoldXPEnableID
@@ -36,6 +39,7 @@ int MinNPCLevelID
 int CostScalingFactorID
 int NormalXPFromSkillsID
 int SkillIncreasesPerLevelID
+int OldMenuID
 
 
 Event OnConfigInit()
@@ -75,7 +79,9 @@ Event OnPageReset(string page)
 		ToggleGiveGoldToNPCsID			= AddToggleOption("Killed NPCs drop extra gold", giveGoldToKilledNPCs, OPTION_FLAG_NONE)
 		GoldScalingFactorID 			= AddSliderOption("Scale extra gold by:", npcGoldScalingFactor, "{1}x", OPTION_FLAG_NONE)
 		MinNPCLevelID					= AddSliderOption("Minimum NPC level:", minimumNPCLevel, "{0}", OPTION_FLAG_NONE)
-		
+		AddEmptyOption()
+        OldMenuID			            = AddToggleOption("Use old menu", useOldMenu, OPTION_FLAG_NONE)
+
 		SetCursorPosition(1)		; top of right column
 		AddHeaderOption("Debug info")
 		AddTextOption("Mod enabled?", enableGoldIsSouls, OPTION_FLAG_DISABLED)
@@ -142,6 +148,10 @@ Event OnOptionSelect(int option)
 		giveGoldToKilledNPCs = !giveGoldToKilledNPCs
 		_givegoldtonpcs = giveGoldToKilledNPCs
 		SetToggleOptionValue(ToggleGiveGoldToNPCsID, _givegoldtonpcs)
+	elseif option == OldMenuID
+		useOldMenu = !useOldMenu
+		_useoldmenu = useOldMenu
+		SetToggleOptionValue(OldMenuID, _useoldmenu)
 	elseif option == NormalXPFromSkillsID
 		normalXPFromSkills = !normalXPFromSkills
 		_normalXPfromskills = normalXPFromSkills
@@ -214,6 +224,8 @@ Event OnOptionHighlight(int option)
 		SetInfoText("Multiply the amount of extra gold given to NPCs by this number.")
 	elseif option == MinNPCLevelID
 		SetInfoText("Only give extra gold if NPC is of this level or higher.")
+	elseif option == OldMenuID
+		SetInfoText("Use the old multi-page, unsorted leveling menu, instead of the new one-page menu. Try this if the leveling menu loads very slowly.")
 	elseif option == NormalXPFromSkillsID
 		SetInfoText("Instead of gaining a level for every " + UtilityQuest.MaxSkillIncreasesPerLevel + " skill points, use the original Skyrim system, where the number of skill points required to gain a level increases as the player's level increases.")
 	elseif option == ToggleGiveGoldToNPCsID

@@ -203,26 +203,6 @@ Function LevelSkills()
 EndFunction
 
 
-; Try to raise the given skill by 1 point. If successful, deduct the gold cost. Return true if
-; successful, false if not.
-bool function TryToRaiseSkill(string skillName)
-    Actor player = Game.GetPlayer()
-    int cost = CostToLevelSkillbyName(skillName)
-    int current_skill = player.getBaseActorValue(skillName) as int
-    game.IncrementSkill(skillName)      ; we have to check if this hit the cap
-    
-    int raised_skill = player.getBaseActorValue(skillName) as int; 
-    
-    if(current_skill < raised_skill)
-        ; skill was incremented successfully
-        player.RemoveItem(GoldBase, cost)
-        return true
-    else
-        return false
-    endif			
-endfunction
-
-
 ; Experimental: use UIExtensions ListMenu to increase skills. 
 function LevelSkills_UIExt()
 	UIListMenu menu=UIExtensions.GetMenu("UIListMenu") as UIListMenu
@@ -259,8 +239,8 @@ function LevelSkills_UIExt()
         entries = PO3_SKSEFunctions.SortArrayString(entries)
         ReverseStringArray(entries)
 
-        entries[0] = "--- Increase Which Skill? (" + player.GetGoldAmount() + " gold) ---;;-1;;0;;0;;0"
-        entries[19] = " ;;-1;;0;;0;;0"
+        entries[0] = "--- Increase Which Skill? (" + player.GetGoldAmount() + " gold) ---;;-1;;-2;;0;;0"
+        entries[19] = " ;;-1;;-2;;0;;0"
         entries[20] = "=== Done ===;;-1;;999;;0;;0"
         ; the 4 numbers separated by ";;" seem to be: parent, id, callback, haschildren
         ; unless we are making nested lists, the only useful one is id, which is what
@@ -277,7 +257,7 @@ function LevelSkills_UIExt()
 		if selected == 999 || selected == -1
 			;consoleutil.printmessage("Exited ListMenu")
 		    bLoop = false
-		elseif selected > 0 
+		elseif selected >= 0 
 			;consoleutil.printmessage("ListMenu: selected " + selected + " (" + skillNames[selected] + ")")
 			int cost = CostToLevelSkillByIndex(selected)
             int remainder = player.GetGoldAmount() - cost
@@ -328,6 +308,26 @@ function LevelSkills_UIExt()
         
         Game.SetPlayerExperience(xpToGain + 1)
     endif
+endfunction
+
+
+; Try to raise the given skill by 1 point. If successful, deduct the gold cost. Return true if
+; successful, false if not.
+bool function TryToRaiseSkill(string skillName)
+    Actor player = Game.GetPlayer()
+    int cost = CostToLevelSkillbyName(skillName)
+    int current_skill = player.getBaseActorValue(skillName) as int
+    game.IncrementSkill(skillName)      ; we have to check if this hit the cap
+    
+    int raised_skill = player.getBaseActorValue(skillName) as int; 
+    
+    if(current_skill < raised_skill)
+        ; skill was incremented successfully
+        player.RemoveItem(GoldBase, cost)
+        return true
+    else
+        return false
+    endif			
 endfunction
 
 

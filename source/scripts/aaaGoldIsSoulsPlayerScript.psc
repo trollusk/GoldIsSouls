@@ -32,7 +32,11 @@ Event OnSleepStop(bool abInterrupted)
 			elseif (player.GetGoldAmount() < lowestCost)
 				notification("To increase your skills, you need at least " + lowestCost + " gold.")
 			else
-				UtilityQuest.LevelSkills_UIExt()
+                if mcmOptions.useOldMenu
+                    UtilityQuest.LevelSkills()
+                else
+				    UtilityQuest.LevelSkills_UIExt()
+                endif
 			endif
 		endif
 	endif
