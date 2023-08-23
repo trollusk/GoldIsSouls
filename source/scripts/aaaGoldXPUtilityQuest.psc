@@ -239,21 +239,17 @@ function LevelSkills_UIExt()
         entries = PO3_SKSEFunctions.SortArrayString(entries)
         ReverseStringArray(entries)
 
-        entries[0] = "--- Increase Which Skill? (" + player.GetGoldAmount() + " gold) ---;;-1;;-2;;0;;0"
+        entries[0] = "--- Increase Which Skill? (" + player.GetGoldAmount() + " gold) ---;;-1;;0;;-2;;0"
         entries[19] = " ;;-1;;-2;;0;;0"
-        entries[20] = "=== Done ===;;-1;;999;;0;;0"
+        entries[20] = "=== Done ===;;-1;;0;;999;;0"
         ; the 4 numbers separated by ";;" seem to be: parent, id, callback, haschildren
-        ; unless we are making nested lists, the only useful one is id, which is what
-        ; GetResultInt will return if that line is selected.
-        ; entries[menuLine] = " ;;-1;;0;;0;;0"
-        ; menuLine += 1
-        ; entries[menuLine] = "=== Done ===;;-1;;999;;0;;0"
+
 
         menu.ResetMenu()
 		menu.SetPropertyStringA("appendEntries", entries)
 		menu.OpenMenu()
 
-		int selected = menu.GetResultInt()
+		int selected = menu.GetResultFloat() as int
 		if selected == 999 || selected == -1
 			;consoleutil.printmessage("Exited ListMenu")
 		    bLoop = false
